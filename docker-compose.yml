@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  helpdesk:
+    build: .
+    container_name: helpdesk_app
+    ports:
+      - "1234:1234"
+    volumes:
+      - ./instance:/app/instance
+      - ./app/uploads:/app/app/uploads
+    environment:
+      - SECRET_KEY=sua_chave_secreta_aqui
+      - DATABASE_URL=sqlite:////app/instance/helpdesk.db
+    restart: always
+
+# Nota: Em produção, recomenda-se usar um volume para a base de dados SQLite
+# ou migrar para um container Postgres/MySQL.

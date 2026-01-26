@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Usuários{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8 pb-12">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-main tracking-tight">Gerenciar Usuários</h1>
+            <p class="text-sm text-muted">Controle de acessos, permissões e administração da equipe</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <form action="{{ url_for('users.delete_all_non_admin_users') }}" method="POST"
+                onsubmit="return confirm('ATENÇÃO: Isso excluirá TODOS os usuários que não são admin e não possuem tickets. Deseja continuar?');"
+                class="inline">
+                <button type="submit"
+                    class="px-4 py-2 text-[11px] font-bold text-red-500 hover:text-white hover:bg-red-500 border border-red-500/30 rounded-xl transition-all">
+                    <i class="fa-solid fa-user-slash mr-1.5"></i> LIMPAR NÃO-ADMINS
+                </button>
+            </form>
+            <a href="{{ url_for('users.create_user') }}"
+                class="flex items-center px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20">
+                <i class="fa-solid fa-plus mr-2"></i> NOVO USUÁRIO
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div
+            class="stitch-surface p-6 rounded-3xl border border-blue-500/10 bg-blue-500/5 flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Total de Usuários</p>
+                <h3 class="text-3xl font-black text-blue-600">{{ stats.total }}</h3>
+            </div>
+            <div class="w-12 h-12 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center">
+                <i class="fa-solid fa-users text-xl"></i>
+            </div>
+        </div>
+        <div
+            class="stitch-surface p-6 rounded-3xl border border-purple-500/10 bg-purple-500/5 flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-purple-500 mb-1">Administradores</p>
+                <h3 class="text-3xl font-black text-purple-600">{{ stats.admins }}</h3>
+            </div>
+            <div class="w-12 h-12 bg-purple-500/10 text-purple-600 rounded-2xl flex items-center justify-center">
+                <i class="fa-solid fa-user-shield text-xl"></i>
+            </div>
+        </div>
+        <div
+            class="stitch-surface p-6 rounded-3xl border border-emerald-500/10 bg-emerald-500/5 flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Colaboradores</p>
+                <h3 class="text-3xl font-black text-emerald-600">{{ stats.regulars }}</h3>
+            </div>
+            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center">
+                <i class="fa-solid fa-user-tie text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="stitch-surface p-4 rounded-3xl border shadow-sm">
+        <form action="{{ url_for('users.list_users') }}" method="GET" class="flex items-center gap-4">
+            <div class="relative flex-grow">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs"></i>
+                <input type="text" name="search_query" placeholder="Buscar por nome, usuário ou email..."
+                    class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium"
+                    value="{{ search_query }}">
+            </div>
+            <button type="submit"
+                class="px-6 py-3 bg-[var(--bg-main)] hover:bg-[var(--border-color)] border border-[var(--border-color)] rounded-2xl font-bold text-xs transition-all uppercase tracking-wider">
+                Filtrar
+            </button>
+            {% if search_query %}
+            <a href="{{ url_for('users.list_users') }}"
+                class="text-xs font-bold text-red-500 hover:underline px-2">Limpar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Users List/Table -->
+    <div class="stitch-surface border rounded-[32px] overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-[var(--bg-main)] border-b border-[var(--border-color)]">
+                        <th class="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-muted">
+                            Usuário</th>
+                        <th class="px-6 py-5 text-left text-[10px] font-black uppercase tracking-widest text-muted">
+                            Email</th>
+                        <th class="px-6 py-5 text-center text-[10px] font-black uppercase tracking-widest text-muted">
+                            Função</th>
+                        <th class="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-muted">
+                            Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-color)]">
+                    {% if users %}
+                    {% for user in users %}
+                    <tr class="hover:bg-slate-500/5 transition-all group">
+                        <td class="px-8 py-5">
+                            <div class="flex items-center space-x-4">
+                                <div
+                                    class="w-12 h-12 {% if user.role == 'admin' %}bg-purple-500/10 text-purple-600{% else %}bg-blue-500/10 text-blue-600{% endif %} rounded-2xl flex items-center justify-center font-black text-lg border border-transparent group-hover:border-current/20 transition-all">
+                                    {{ (user.fullname or user.username)[:1]|upper }}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-main leading-tight">{{ user.fullname or user.username }}
+                                    </p>
+                                    <p class="text-xs text-muted font-medium">@{{ user.username }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="text-sm font-medium text-main">{{ user.email }}</span>
+                        </td>
+                        <td class="px-6 py-5 text-center">
+                            <span
+                                class="inline-flex items-center px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full 
+                                    {% if user.role == 'admin' %}bg-purple-500/10 text-purple-600 border border-purple-500/20{% else %}bg-emerald-500/10 text-emerald-600 border border-emerald-500/20{% endif %}">
+                                <i
+                                    class="fa-solid {% if user.role == 'admin' %}fa-shield-halved{% else %}fa-user{% endif %} mr-1.5"></i>
+                                {{ user.role }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <div class="inline-flex items-center space-x-2">
+                                <a href="{{ url_for('users.edit_user', id=user.id) }}" title="Editar Usuário"
+                                    class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-500/10 text-muted hover:bg-primary hover:text-white transition-all">
+                                    <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                </a>
+
+                                {% if user.id != current_user.id %}
+                                <form action="{{ url_for('users.delete_user', id=user.id) }}" method="POST"
+                                    onsubmit="return confirm('Tem certeza que deseja excluir {{ user.username }}?');"
+                                    class="inline">
+                                    <button type="submit" title="Excluir Usuário"
+                                        class="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                                        <i class="fa-solid fa-trash text-sm"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <div class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-500/5 text-slate-500/30 cursor-not-allowed"
+                                    title="Você não pode excluir a si próprio">
+                                    <i class="fa-solid fa-user-lock text-sm"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="px-8 py-20 text-center">
+                            <div class="max-w-xs mx-auto space-y-3">
+                                <div
+                                    class="w-16 h-16 bg-slate-500/10 text-slate-400 rounded-3xl flex items-center justify-center mx-auto">
+                                    <i class="fa-solid fa-user-slash text-2xl"></i>
+                                </div>
+                                <h4 class="font-bold text-main">Nenhum Usuário Encontrado</h4>
+                                <p class="text-xs text-muted">Tente ajustar seus termos de busca ou filtros.</p>
+                                <a href="{{ url_for('users.list_users') }}"
+                                    class="inline-block text-xs font-bold text-primary hover:underline">Limpar Busca</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

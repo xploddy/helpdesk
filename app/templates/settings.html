@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-8" x-data="{ tab: '{{ active_tab or 'categories' }}' }">
+
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold">Configurações</h1>
+        <p class="text-sm text-slate-400">Gerencie o sistema, categorias e conexões</p>
+    </div>
+
+    <!-- Tabs Header -->
+    <div class="flex p-1 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl space-x-1 stitch-surface">
+        <button @click="tab = 'categories'"
+            :class="tab === 'categories' ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'text-slate-400 hover:text-slate-200'"
+            class="flex-1 py-3 text-xs font-bold rounded-xl transition-all">
+            Categorias
+        </button>
+        <button @click="tab = 'ad'"
+            :class="tab === 'ad' ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'text-slate-400 hover:text-slate-200'"
+            class="flex-1 py-3 text-xs font-bold rounded-xl transition-all">
+            AD
+        </button>
+        <button @click="tab = 'backup'"
+            :class="tab === 'backup' ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'text-slate-400 hover:text-slate-200'"
+            class="flex-1 py-3 text-xs font-bold rounded-xl transition-all">
+            Backup
+        </button>
+        <button @click="tab = 'sla'"
+            :class="tab === 'sla' ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'text-slate-400 hover:text-slate-200'"
+            class="flex-1 py-3 text-xs font-bold rounded-xl transition-all">
+            SLA
+        </button>
+        <button @click="tab = 'stats'"
+            :class="tab === 'stats' ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'text-slate-400 hover:text-slate-200'"
+            class="flex-1 py-3 text-xs font-bold rounded-xl transition-all">
+            Estatísticas
+        </button>
+    </div>
+
+    <!-- 1. Categories Tab -->
+    <div x-show="tab === 'categories'" class="space-y-6 animate-in fade-in slide-in-from-top-2">
+        <div class="stitch-surface border rounded-3xl p-6 shadow-sm">
+            <h3 class="text-lg font-bold mb-4">Gerenciar Categorias</h3>
+
+            <form action="{{ url_for('settings.create_category') }}" method="POST" class="flex space-x-2 mb-6">
+                <input type="text" name="name" placeholder="Nova Categoria" required
+                    class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm focus:border-primary transition-all">
+                <button type="submit"
+                    class="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20 flex-shrink-0">
+                    Add
+                </button>
+            </form>
+
+            <div class="space-y-2">
+                {% for category in categories %}
+                <div class="flex items-center justify-between p-4 stitch-surface border rounded-2xl">
+                    <span class="text-sm font-medium text-slate-200">{{ category.name }}</span>
+                    <form action="{{ url_for('settings.delete_category', id=category.id) }}" method="POST"
+                        onsubmit="return confirm('Tem certeza?');">
+                        <button type="submit"
+                            class="w-8 h-8 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="text-center py-8 text-sm text-slate-500 italic">Nenhuma categoria cadastrada.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. AD Tab -->
+    <div x-show="tab === 'ad'" class="space-y-6 animate-in fade-in slide-in-from-top-2" x-cloak>
+        <div class="stitch-surface border rounded-3xl p-6 shadow-sm">
+            <h3 class="text-lg font-bold mb-6">Configuração Active Directory</h3>
+
+            <form action="{{ url_for('settings.update_ad_config') }}" method="POST" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Servidor
+                            AD</label>
+                        <input type="text" name="ad_server" value="{{ settings.ad_server or '' }}"
+                            class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all"
+                            placeholder="IP ou Hostname">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Domínio</label>
+                        <input type="text" name="ad_domain" value="{{ settings.ad_domain or '' }}"
+                            class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all"
+                            placeholder="ex: empresa.local">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Base
+                        DN</label>
+                    <input type="text" name="ad_base_dn" value="{{ settings.ad_base_dn or '' }}"
+                        class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all"
+                        placeholder="ex: DC=empresa,DC=local">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Usuário
+                            Bind</label>
+                        <input type="text" name="ad_user_dn" value="{{ settings.ad_user_dn or '' }}"
+                            class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all"
+                            placeholder="usuario@dominio.com">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Senha
+                            Bind</label>
+                        <input type="password" name="ad_user_password"
+                            class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20">
+                    Salvar Configurações AD
+                </button>
+            </form>
+
+            <div class="mt-10 pt-10 border-t border-dark-border space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-bold">Importação em Massa</h4>
+                        <p class="text-xs text-slate-500">Busca e importa todos os usuários ativos automaticamente.</p>
+                    </div>
+                    <form action="{{ url_for('settings.bulk_import_ad_users') }}" method="POST"
+                        onsubmit="return confirm('Deseja importar todos os usuários ativos que ainda não estão no sistema?');">
+                        <button type="submit"
+                            class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                            <span>Importar Tudo</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="pt-4 border-t border-dark-border">
+                    <h4 class="text-sm font-bold mb-4">Busca e Filtro Individual</h4>
+                    <form action="{{ url_for('settings.sync_ad') }}" method="POST" class="flex gap-2">
+                        <input type="text" name="search_query" placeholder="Nome ou usuário..."
+                            class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all"
+                            value="{{ request.form.get('search_query', '') }}">
+                        <button type="submit"
+                            class="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-2xl font-bold transition-all">
+                            Buscar
+                        </button>
+                    </form>
+                </div>
+
+                {% if ad_users_found %}
+                <div class="mt-6 space-y-4">
+                    <div
+                        class="flex items-center justify-between p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl">
+                        <span class="text-sm font-bold text-indigo-400">{{ ad_users_found|length }} usuários
+                            encontrados</span>
+                        <form action="{{ url_for('settings.clear_ad_search') }}" method="POST">
+                            <button type="submit" class="text-xs text-slate-400 hover:text-white underline">Limpar
+                                Resultados</button>
+                        </form>
+                    </div>
+
+                    <div class="max-h-80 overflow-y-auto space-y-2 pr-2">
+                        {% for user in ad_users_found %}
+                        <div
+                            class="flex items-center justify-between p-3 border border-dark-border rounded-xl hover:bg-slate-800/30">
+                            <div>
+                                <p class="text-sm font-bold">{{ user.display_name }}</p>
+                                <p class="text-[10px] text-slate-500">{{ user.username }} • {{ user.email }}</p>
+                            </div>
+                            {% if not user.exists %}
+                            <form action="{{ url_for('settings.import_single_ad_user') }}" method="POST">
+                                <input type="hidden" name="username" value="{{ user.username }}">
+                                <button type="submit"
+                                    class="p-2 bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-lg transition-all">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-[10px] text-slate-600 font-bold uppercase">Já existe</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Backup Tab -->
+    <div x-show="tab === 'backup'" class="space-y-6 animate-in fade-in slide-in-from-top-2" x-cloak>
+        <div class="stitch-surface border rounded-3xl p-8 shadow-sm">
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary text-2xl">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold">Backup do Sistema</h3>
+                    <p class="text-sm text-slate-400">Proteja seus dados e anexos</p>
+                </div>
+            </div>
+
+            <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-2xl p-6 mb-8">
+                <h4 class="text-sm font-bold mb-4 flex items-center text-main">
+                    <i class="fa-solid fa-circle-info mr-2 text-primary"></i> O que o backup contém?
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="p-4 bg-[var(--surface)] rounded-xl border border-[var(--border-color)] shadow-sm">
+                        <p class="text-[10px] uppercase font-black tracking-widest text-primary mb-2">Banco de Dados</p>
+                        <p class="text-xs text-muted leading-relaxed">Todos os chamados, usuários e inventário.</p>
+                    </div>
+                    <div class="p-4 bg-[var(--surface)] rounded-xl border border-[var(--border-color)] shadow-sm">
+                        <p class="text-[10px] uppercase font-black tracking-widest text-primary mb-2">Anexos</p>
+                        <p class="text-xs text-muted leading-relaxed">Todas as fotos e documentos enviados.</p>
+                    </div>
+                    <div class="p-4 bg-[var(--surface)] rounded-xl border border-[var(--border-color)] shadow-sm">
+                        <p class="text-[10px] uppercase font-black tracking-widest text-primary mb-2">Configurações</p>
+                        <p class="text-xs text-muted leading-relaxed">Categorias e conexões Active Directory.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <a href="{{ url_for('settings.export_backup') }}"
+                        class="w-full py-5 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center space-x-3 text-lg">
+                        <i class="fa-solid fa-file-zipper"></i>
+                        <span>Baixar Backup Completo (.ZIP)</span>
+                    </a>
+                    <p class="text-center text-xs text-slate-500">
+                        Último backup realizado agora: {{ now.strftime('%d/%m/%Y %H:%M') if now else 'Pendente' }}
+                    </p>
+                </div>
+
+                <div class="mt-12 pt-10 border-t border-[var(--border-color)]">
+                    <h3 class="text-lg font-black uppercase tracking-widest text-main mb-4 flex items-center">
+                        <i class="fa-solid fa-upload mr-3 text-success"></i> Restauração Seletiva
+                    </h3>
+                    <p class="text-sm text-muted mb-6 leading-relaxed">
+                        Selecione um arquivo de backup (.zip) e escolha as partes que deseja restaurar.
+                        <span class="text-danger font-bold">Aviso: Isso substituirá os arquivos atuais!</span>
+                    </p>
+
+                    <form action="{{ url_for('settings.restore_backup') }}" method="POST" enctype="multipart/form-data"
+                        class="space-y-6">
+                        <div class="p-6 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-2xl">
+                            <label
+                                class="block text-[10px] font-black text-muted mb-4 uppercase tracking-widest">Selecione
+                                o arquivo .ZIP</label>
+                            <input type="file" name="backup_file" accept=".zip" required class="block w-full text-sm text-muted
+                            file:mr-4 file:py-2.5 file:px-6
+                            file:rounded-xl file:border-0
+                            file:text-[10px] file:font-black file:uppercase file:tracking-widest
+                            file:bg-primary/20 file:text-primary
+                            hover:file:bg-primary/30 transition-all cursor-pointer">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label
+                                class="flex items-center p-4 stitch-surface border rounded-2xl cursor-pointer hover:border-primary/50 transition-all">
+                                <input type="checkbox" name="restore_db"
+                                    class="w-5 h-5 rounded border-dark-border text-primary focus:ring-primary/20 mr-3"
+                                    checked>
+                                <div>
+                                    <p class="text-sm font-bold">Base de Dados</p>
+                                    <p class="text-[10px] text-slate-500">Chamados, usuários e estoque</p>
+                                </div>
+                            </label>
+                            <label
+                                class="flex items-center p-4 stitch-surface border rounded-2xl cursor-pointer hover:border-emerald-500/50 transition-all">
+                                <input type="checkbox" name="restore_uploads"
+                                    class="w-5 h-5 rounded border-[var(--border-color)] text-success focus:ring-success/20 mr-4"
+                                    checked>
+                                <div>
+                                    <p class="text-sm font-bold text-main">Imagens / Anexos</p>
+                                    <p class="text-[10px] text-muted">Fotos e documentos enviados</p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2"
+                            onclick="return confirm('ATENÇÃO: A restauração irá SUBSTITUIR seus dados atuais pelos dados do backup.\n\nTem certeza que deseja continuar?');">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Iniciar Restauração Selecionada</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+
+            <div class="stitch-surface border rounded-3xl p-6 border-red-500/20 bg-red-500/5">
+                <h3 class="text-lg font-bold mb-2 text-red-500 flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation mr-2"></i> Zona de Perigo
+                </h3>
+                <p class="text-xs text-slate-400 mb-6">Ações irreversíveis que afetam todo o sistema.</p>
+
+                <form action="{{ url_for('users.delete_all_non_admin_users') }}" method="POST"
+                    onsubmit="return confirm('ATENÇÃO: Isso apagará TODOS os usuários (exceto admins). Deseja continuar?');">
+                    <button type="submit"
+                        class="w-full py-3 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-xs font-bold transition-all">
+                        Excluir Todos os Usuários Não-Admin
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. SLA Tab -->
+    <div x-show="tab === 'sla'" class="space-y-6 animate-in fade-in slide-in-from-top-2" x-cloak>
+        <div class="stitch-surface border rounded-3xl p-6 shadow-sm">
+            <h3 class="text-lg font-bold mb-6">Configuração de SLA (Prazos)</h3>
+            <p class="text-sm text-slate-400 mb-6">Defina o tempo máximo (em horas) para resolução de chamados
+                por
+                prioridade.</p>
+
+            <form action="{{ url_for('settings.update_sla_config') }}" method="POST" class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Baixa</label>
+                        <div class="relative">
+                            <input type="number" name="sla_hours_baixa" value="{{ settings.sla_hours_baixa or 48 }}"
+                                class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all text-center">
+                            <span class="absolute right-4 top-3 text-sm text-slate-400 font-bold">h</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Média</label>
+                        <div class="relative">
+                            <input type="number" name="sla_hours_media" value="{{ settings.sla_hours_media or 24 }}"
+                                class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all text-center">
+                            <span class="absolute right-4 top-3 text-sm text-slate-400 font-bold">h</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Alta</label>
+                        <div class="relative">
+                            <input type="number" name="sla_hours_alta" value="{{ settings.sla_hours_alta or 8 }}"
+                                class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all text-center">
+                            <span class="absolute right-4 top-3 text-sm text-slate-400 font-bold">h</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] uppercase font-black tracking-widest text-rose-500 mb-2">Crítica</label>
+                        <div class="relative">
+                            <input type="number" name="sla_hours_critica" value="{{ settings.sla_hours_critica or 4 }}"
+                                class="stitch-input block w-full px-4 py-3 rounded-2xl border outline-none text-sm transition-all text-center border-rose-200 focus:border-rose-500 text-rose-500 font-bold">
+                            <span class="absolute right-4 top-3 text-sm text-slate-400 font-bold">h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20">
+                    Salvar Prazos de SLA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Stats Tab -->
+    <div x-show="tab === 'stats'" class="flex flex-col h-[600px] animate-in fade-in slide-in-from-top-2" x-cloak>
+        <div class="flex-grow bg-[var(--bg-main)] rounded-3xl border border-[var(--border-color)] overflow-hidden">
+            <iframe src="{{ url_for('main.admin_stats') }}?embed=true" class="w-full h-full border-0"></iframe>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
+{% endblock %}

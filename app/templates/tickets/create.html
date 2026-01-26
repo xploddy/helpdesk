@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Ticket{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-10">
+        <a href="{{ url_for('main.index') }}"
+            class="text-sm font-bold text-muted hover:text-[var(--text-main)] transition-colors">Cancelar</a>
+        <h2 class="text-lg font-bold">Criar Novo Chamado</h2>
+        <a href="#" class="text-sm font-bold text-primary hover:text-primary-dark transition-colors">Ajuda</a>
+    </div>
+
+    <!-- Ticket Details Info -->
+    <div class="mb-8">
+        <h3 class="text-2xl font-bold mb-2">Detalhes do Chamado</h3>
+        <p class="text-sm text-muted">Por favor, forneça os detalhes da sua solicitação para que possamos ajudá-lo
+            melhor.</p>
+    </div>
+
+    <form action="{{ url_for('tickets.create_ticket') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <!-- User Selection (Admins Only) -->
+        {% if current_user.role == 'admin' %}
+        <div>
+            <label for="user_id"
+                class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Solicitante
+                (Usuário)</label>
+            <div class="flex space-x-2">
+                <div class="relative flex-grow">
+                    <select id="user_id" name="user_id" required
+                        class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none">
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if user.id==current_user.id %}selected{% endif %}>
+                            {{ user.fullname or user.username }} ({{ user.username }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <i class="fa-solid fa-user text-xs"></i>
+                    </div>
+                </div>
+                <!-- Search Field -->
+                <div class="relative w-1/3">
+                    <input type="text" id="user-search" onkeyup="filterUsers()" placeholder="Buscar..."
+                        class="stitch-input block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none text-sm">
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <i class="fa-solid fa-search text-xs"></i>
+                    </div>
+                </div>
+            </div>
+            <p class="text-[10px] text-muted mt-1">Como administrador, você pode abrir este chamado para outro usuário.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Subject -->
+        <div>
+            <label for="title"
+                class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Assunto</label>
+            <input type="text" name="title" id="title" required placeholder="Qual é o problema?"
+                class="stitch-input block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none">
+        </div>
+
+
+        <!-- Category -->
+        <div>
+            <label for="category"
+                class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Categoria</label>
+            <div class="relative">
+                <select id="category" name="category"
+                    class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none">
+                    {% for category in categories %}
+                    <option value="{{ category.name }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority (Segmented Control) -->
+        <div>
+            <label class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Prioridade</label>
+            <div class="flex p-1 stitch-surface border rounded-xl space-x-1">
+                <input type="hidden" name="priority" id="priority-input" value="Media">
+                <button type="button" onclick="setPriority('Baixa', this)"
+                    class="priority-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">Baixa</button>
+                <button type="button" onclick="setPriority('Media', this)"
+                    class="priority-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-primary text-white">Média</button>
+                <button type="button" onclick="setPriority('Alta', this)"
+                    class="priority-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">Alta</button>
+                <button type="button" onclick="setPriority('Critica', this)"
+                    class="priority-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">Urgente</button>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+            <label for="description"
+                class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Descrição</label>
+            <textarea id="description" name="description" rows="5" required
+                placeholder="Forneça mais detalhes sobre o problema..."
+                class="stitch-input block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none resize-none"></textarea>
+        </div>
+
+        <!-- Attachments -->
+        <div>
+            <label class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Anexos</label>
+            <div id="paste-area"
+                class="border-2 border-dashed border-[var(--border-color)] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-slate-500"
+                onclick="document.getElementById('attachment').click()">
+                <i class="fa-solid fa-paperclip text-2xl mb-3"></i>
+                <p class="text-xs font-medium">Clique para selecionar ou arraste arquivos</p>
+                <p class="text-[10px] mt-1 opacity-50">Qualquer tipo de arquivo • Múltiplos arquivos permitidos</p>
+            </div>
+            <input type="file" name="attachment" id="attachment" class="hidden" multiple>
+
+            <!-- Preview List -->
+            <div id="file-list" class="mt-4 space-y-2 hidden">
+                <!-- JS will populate this -->
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+            class="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center space-x-2">
+            <span>Enviar Chamado</span>
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+    </form>
+</div>
+
+<script>
+    function setPriority(val, btn) {
+        document.getElementById('priority-input').value = val;
+        document.querySelectorAll('.priority-btn').forEach(b => {
+            b.classList.remove('bg-primary', 'text-white');
+            b.classList.add('text-slate-400');
+        });
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('bg-primary', 'text-white');
+    }
+
+    function filterUsers() {
+        const input = document.getElementById('user-search');
+        const filter = input.value.toLowerCase();
+        const select = document.getElementById('user_id');
+        const options = select.getElementsByTagName('option');
+        let hasVisible = false;
+
+        for (let i = 0; i < options.length; i++) {
+            const txtValue = options[i].textContent || options[i].innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                options[i].style.display = "";
+                if (!hasVisible) {
+                    select.selectedIndex = i; // Select first match
+                    hasVisible = true;
+                }
+            } else {
+                options[i].style.display = "none";
+            }
+        }
+    }
+
+    // Attachment Logic
+    let selectedFiles = new DataTransfer();
+
+    function updateFileList() {
+        const list = document.getElementById('file-list');
+        const input = document.getElementById('attachment');
+
+        list.innerHTML = '';
+        if (selectedFiles.files.length > 0) {
+            list.classList.remove('hidden');
+            Array.from(selectedFiles.files).forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dark-border';
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+                            <i class="fa-solid ${getFileIcon(file.type)}"></i>
+                        </div>
+                        <div class="truncate">
+                            <p class="text-xs font-bold truncate">${file.name}</p>
+                            <p class="text-[10px] text-muted">${formatSize(file.size)}</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeFile(${index})" class="text-red-500 hover:text-red-700 p-2">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        } else {
+            list.classList.add('hidden');
+        }
+
+        input.files = selectedFiles.files;
+    }
+
+    function getFileIcon(type) {
+        if (type.includes('image')) return 'fa-image';
+        if (type.includes('pdf')) return 'fa-file-pdf';
+        if (type.includes('word') || type.includes('document')) return 'fa-file-word';
+        if (type.includes('excel') || type.includes('sheet')) return 'fa-file-excel';
+        return 'fa-file';
+    }
+
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function removeFile(index) {
+        const dt = new DataTransfer();
+        Array.from(selectedFiles.files).forEach((file, i) => {
+            if (i !== index) dt.items.add(file);
+        });
+        selectedFiles = dt;
+        updateFileList();
+    }
+
+    document.getElementById('attachment').addEventListener('change', function (e) {
+        Array.from(this.files).forEach(file => {
+            selectedFiles.items.add(file);
+        });
+        updateFileList();
+    });
+
+    // Paste Support
+    document.addEventListener('paste', function (e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let index in items) {
+            const item = items[index];
+            if (item.kind === 'file') {
+                const blob = item.getAsFile();
+                if (blob) {
+                    const file = new File([blob], blob.name || `pasted_file_${Date.now()}`, { type: blob.type });
+                    selectedFiles.items.add(file);
+                    updateFileList();
+                }
+            }
+        }
+    });
+
+    // Drag & Drop
+    const pasteArea = document.getElementById('paste-area');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        pasteArea.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        pasteArea.addEventListener(eventName, () => pasteArea.classList.add('border-primary', 'bg-primary/5'));
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        pasteArea.addEventListener(eventName, () => {
+            pasteArea.classList.remove('border-primary', 'bg-primary/5');
+        });
+    });
+
+    pasteArea.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        Array.from(files).forEach(file => {
+            selectedFiles.items.add(file);
+        });
+        updateFileList();
+    });
+</script>
+{% endblock %}

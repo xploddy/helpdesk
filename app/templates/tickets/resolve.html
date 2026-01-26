@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Resolver Chamado #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold">Resolver Chamado</h1>
+        <p class="text-sm text-slate-400">Marque os itens utilizados na resolução do chamado</p>
+    </div>
+
+    <!-- Informações do Chamado -->
+    <div class="stitch-surface border rounded-2xl p-6">
+        <h3 class="text-lg font-bold mb-4">Chamado #{{ ticket.id }}</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <span class="font-medium text-slate-500">Título:</span>
+                <span class="text-white">{{ ticket.title }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-slate-500">Categoria:</span>
+                <span class="text-white">{{ ticket.category }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-slate-500">Prioridade:</span>
+                <span class="text-white">{{ ticket.priority }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-slate-500">Solicitante:</span>
+                <span class="text-white">{{ ticket.author.username }}</span>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span class="font-medium text-slate-500">Descrição:</span>
+            <p class="text-white mt-1">{{ ticket.description }}</p>
+        </div>
+    </div>
+
+    <!-- Formulário de Resolução -->
+    <form method="POST" id="resolveForm" class="stitch-surface border rounded-2xl p-6">
+        <h3 class="text-lg font-bold mb-4">Itens Utilizados</h3>
+        <p class="text-sm text-slate-400 mb-6">Selecione os itens que foram utilizados para resolver este chamado. O
+            estoque será automaticamente atualizado.</p>
+
+        <!-- Lista de Itens Disponíveis -->
+        <div class="space-y-4 mb-6">
+            {% for item in available_items %}
+            <div class="item-row border border-slate-700 rounded-lg p-4 hover:bg-slate-800/30 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="item_{{ item.id }}" name="used_items[]" value="{{ item.id }}"
+                                class="rounded border-slate-300 text-primary focus:ring-primary">
+                            <div>
+                                <label for="item_{{ item.id }}" class="font-medium text-white cursor-pointer">
+                                    {{ item.name }}
+                                </label>
+                                <div class="text-xs text-slate-500">
+                                    {{ item.category }} • Estoque: {{ item.quantity }} • R$ {{
+                                    "%.2f"|format(item.unit_cost) }}
+                                    {% if item.location %}• {{ item.location }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-details hidden ml-4 flex items-center space-x-2">
+                        <div class="flex items-center space-x-2">
+                            <label class="text-xs text-slate-400">Qtd:</label>
+                            <input type="number" name="quantities[]" min="1" max="{{ item.quantity }}" value="1"
+                                class="w-16 px-2 py-1 text-xs border border-slate-600 rounded bg-slate-700 text-white">
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-xs text-slate-400">Obs:</label>
+                            <input type="text" name="notes[]" placeholder="Observações..."
+                                class="flex-1 px-2 py-1 text-xs border border-slate-600 rounded bg-slate-700 text-white">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if not available_items %}
+        <div class="text-center py-8 text-slate-500">
+            <i class="fa-solid fa-box-open text-3xl mb-2"></i>
+            <p>Nenhum item disponível no estoque.</p>
+            <a href="{{ url_for('inventory.index') }}" class="text-primary hover:underline">Gerenciar Inventário</a>
+        </div>
+        {% endif %}
+
+        <!-- Ações -->
+        <div class="flex justify-end space-x-4 pt-6 border-t border-dark-border">
+            <a href="{{ url_for('tickets.view_ticket', id=ticket.id) }}"
+                class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-2xl font-medium transition-all">
+                Cancelar
+            </a>
+            <button type="submit"
+                class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-medium transition-all">
+                <i class="fa-solid fa-check mr-2"></i> Resolver Chamado
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Mostrar/ocultar detalhes dos itens selecionados
+    document.querySelectorAll('input[type="checkbox"][name="used_items[]"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const itemRow = this.closest('.item-row');
+            const itemDetails = itemRow.querySelector('.item-details');
+
+            if (this.checked) {
+                itemDetails.classList.remove('hidden');
+            } else {
+                itemDetails.classList.add('hidden');
+            }
+        });
+    });
+
+    // Validação do formulário
+    document.getElementById('resolveForm').addEventListener('submit', function (e) {
+        const selectedItems = document.querySelectorAll('input[name="used_items[]"]:checked');
+
+        if (selectedItems.length === 0) {
+            if (!confirm('Nenhum item foi selecionado. Deseja resolver o chamado mesmo assim?')) {
+                e.preventDefault();
+                return;
+            }
+        }
+
+        // Validar quantidades
+        const quantities = document.querySelectorAll('input[name="quantities[]"]');
+        for (let i = 0; i < quantities.length; i++) {
+            const qty = parseInt(quantities[i].value);
+            if (qty <= 0) {
+                alert('A quantidade deve ser maior que zero.');
+                e.preventDefault();
+                return;
+            }
+        }
+    });
+</script>
+{% endblock %}

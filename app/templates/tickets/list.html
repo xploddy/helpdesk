@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Fila de Chamados{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto pb-10">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 stitch-surface rounded-full flex items-center justify-center border">
+                <i class="fa-solid fa-user-shield text-primary text-lg"></i>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold">Fila de Chamados</h2>
+                <p class="text-[10px] text-muted font-bold uppercase tracking-widest">Painel de {{ current_user.role
+                    }}</p>
+            </div>
+        </div>
+        <div class="flex space-x-2">
+            <button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-bell"></i>
+            </button>
+            <button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <form action="{{ url_for('tickets.list_tickets') }}" method="GET" class="relative mb-6">
+        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <i class="fa-solid fa-search text-slate-500 text-sm"></i>
+        </div>
+        <input type="text" name="q" value="{{ request.args.get('q', '') }}"
+            placeholder="Buscar por ID, usuário ou termo..."
+            class="stitch-input block w-full pl-10 pr-4 py-3 rounded-2xl border focus:border-primary outline-none text-sm transition-all">
+    </form>
+
+    <!-- Filter Chips -->
+    <div class="flex space-x-2 mb-8 overflow-x-auto pb-2 hide-scrollbar">
+        <a href="{{ url_for('tickets.list_tickets', priority='Critica') }}"
+            class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
+           {% if request.args.get('priority') == 'Critica' %}bg-red-500/20 text-red-400 border-red-500/50{% else %}stitch-surface text-slate-400 border-dark-border hover:border-slate-600{% endif %}">
+            <span class="mr-1">!</span> Urgente
+        </a>
+        <a href="{{ url_for('tickets.list_tickets') }}"
+            class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
+           {% if not request.args.get('status') and not request.args.get('priority') %}bg-primary text-white border-primary{% else %}stitch-surface text-slate-400 border-dark-border hover:border-slate-600{% endif %}">
+            Todos os Chamados
+        </a>
+        <a href="{{ url_for('tickets.list_tickets', status='Aberto') }}"
+            class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
+           {% if request.args.get('status') == 'Aberto' %}bg-primary text-white border-primary{% else %}stitch-surface text-slate-400 border-dark-border hover:border-slate-600{% endif %}">
+            Não atribuídos
+        </a>
+        <a href="{{ url_for('tickets.list_tickets', status='Em andamento') }}"
+            class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
+           {% if request.args.get('status') == 'Em andamento' %}bg-primary text-white border-primary{% else %}stitch-surface text-slate-400 border-dark-border hover:border-slate-600{% endif %}">
+            Em Andamento
+        </a>
+        <a href="{{ url_for('tickets.list_tickets', status='Resolvido') }}"
+            class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
+           {% if request.args.get('status') == 'Resolvido' %}bg-primary text-white border-primary{% else %}stitch-surface text-slate-400 border-dark-border hover:border-slate-600{% endif %}">
+            Resolvidos
+        </a>
+    </div>
+
+    <!-- Ticket Cards -->
+    <div class="space-y-4">
+        {% for ticket in tickets.items %}
+        <div
+            class="stitch-surface rounded-2xl border-l-[3px] shadow-lg p-5 transition-all hover:translate-x-1
+             {% if ticket.priority == 'Critica' %}border-l-red-500{% elif ticket.priority == 'Alta' %}border-l-orange-500{% elif ticket.priority == 'Media' %}border-l-indigo-500{% else %}border-l-slate-600{% endif %} border-y border-r">
+
+            <!-- Card Header -->
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex flex-col">
+                    <span
+                        class="text-[9px] font-black uppercase tracking-widest mb-1
+                         {% if ticket.priority == 'Critica' %}text-red-500{% elif ticket.priority == 'Alta' %}text-orange-500{% else %}text-muted{% endif %}">
+                        Prioridade: {{ ticket.priority }}
+                    </span>
+                    <h4 class="text-sm font-bold text-main">#TK-{{ ticket.id }} - {{ ticket.title }}</h4>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-primary mb-1">
+                        {{ ticket.status }}
+                    </span>
+                    <i class="fa-solid fa-ellipsis text-muted text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Avatar & Tech -->
+            <div class="flex items-center space-x-3 mb-6">
+                <div
+                    class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                    {{ ticket.author.username[:2] }}
+                </div>
+                <span class="text-xs text-muted font-medium">{{ ticket.author.username }}</span>
+            </div>
+
+            <!-- Footer Details -->
+            <div class="flex justify-between items-end">
+                <div class="space-y-2">
+                    <div class="flex items-center text-[10px] text-muted font-bold uppercase tracking-wider">
+                        <i class="fa-regular fa-clock mr-1.5 text-xs"></i>
+                        Aberto em {{ ticket.created_at.strftime('%d/%m/%Y') }}
+                    </div>
+                    <p class="text-[9px] font-black text-muted uppercase tracking-widest">Prazo de SLA</p>
+                </div>
+
+                <a href="{{ url_for('tickets.view_ticket', id=ticket.id) }}"
+                    class="bg-primary hover:bg-primary-dark text-white text-[11px] font-bold px-6 py-2 rounded-xl transition-all shadow-lg shadow-primary/20">
+                    Ver
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-20 stitch-surface rounded-2xl border border-dashed">
+            <i class="fa-solid fa-list-check text-slate-700 text-4xl mb-4"></i>
+            <p class="text-slate-500 font-bold">Nenhum chamado encontrado</p>
+            <a href="{{ url_for('tickets.create_ticket') }}"
+                class="text-primary text-xs font-bold mt-2 inline-block">Deseja criar um?</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if tickets.pages > 1 %}
+    <div class="mt-10 flex items-center justify-center space-x-2">
+        {% if tickets.has_prev %}
+        <a href="{{ url_for('tickets.list_tickets', page=tickets.prev_num, **request.args) }}"
+            class="w-10 h-10 flex items-center justify-center rounded-xl stitch-surface border text-slate-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+        </a>
+        {% endif %}
+
+        <span class="text-xs font-bold text-slate-500 px-4">Página {{ tickets.page }} de {{ tickets.pages }}</span>
+
+        {% if tickets.has_next %}
+        <a href="{{ url_for('tickets.list_tickets', page=tickets.next_num, **request.args) }}"
+            class="w-10 h-10 flex items-center justify-center rounded-xl stitch-surface border text-slate-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Inventário{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8" x-data="{ showImport: false }">
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold">Inventário</h1>
+        <p class="text-sm text-muted">Gerencie itens e controle de estoque</p>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="stitch-surface border rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-muted">Total de Itens</p>
+                    <p class="text-2xl font-bold text-blue-500">{{ total_items }}</p>
+                </div>
+                <div class="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-box text-lg"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stitch-surface border rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-muted">Valor Total</p>
+                    <p class="text-2xl font-bold text-green-500">R$ {{ "%.2f"|format(total_value) }}</p>
+                </div>
+                <div class="w-10 h-10 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-dollar-sign text-lg"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stitch-surface border rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-muted">Estoque Baixo</p>
+                    <p class="text-2xl font-bold text-red-500">{{ low_stock_items }}</p>
+                </div>
+                <div class="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center justify-center">
+            <a href="{{ url_for('inventory.create_item') }}"
+                class="w-full flex items-center justify-center px-4 py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20">
+                <i class="fa-solid fa-plus mr-2"></i> Adicionar Item
+            </a>
+        </div>
+    </div>
+
+
+    <!-- Filtros e Relatórios -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Filtros de Busca -->
+        <div class="lg:col-span-2 stitch-surface border rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4">Filtros de Busca</h3>
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-2">Buscar</label>
+                    <input type="text" name="q" value="{{ filters.q }}" placeholder="Nome, descrição..."
+                        class="stitch-input w-full px-3 py-2 rounded-lg border text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-2">Categoria</label>
+                    <select name="category" class="stitch-input w-full px-3 py-2 rounded-lg border text-sm">
+                        <option value="">Todas as categorias</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if filters.category==category %}selected{% endif %}>{{
+                            category }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" name="low_stock" value="1" {% if filters.low_stock %}checked{% endif %}
+                            class="rounded border-slate-300">
+                        <span class="text-sm text-muted">Apenas estoque baixo</span>
+                    </label>
+                </div>
+                <div class="flex items-center justify-end space-x-2">
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all">
+                        <i class="fa-solid fa-search mr-1"></i> Filtrar
+                    </button>
+                    <a href="{{ url_for('inventory.index') }}"
+                        class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-all">
+                        <i class="fa-solid fa-times mr-1"></i> Limpar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Relatórios em Excel -->
+        <div class="stitch-surface border rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4">Relatórios Profissionais</h3>
+            <div class="space-y-4">
+                <!-- Estoque Simples -->
+                <a href="{{ url_for('inventory.export_excel') }}"
+                    class="flex items-center justify-between p-3 rounded-xl border border-[var(--border-color)] hover:bg-green-600/10 hover:border-green-600 transition-all group">
+                    <div class="flex items-center">
+                        <div
+                            class="p-2 bg-green-600/20 text-green-600 rounded-lg mr-3 group-hover:bg-green-600 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold">Estoque Atual</p>
+                            <p class="text-[10px] text-muted text-card-muted">Status completo das prateleiras</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-download text-muted text-card-muted"></i>
+                </a>
+
+                <!-- Importação de Estoque -->
+                <button @click="showImport = true"
+                    class="w-full flex items-center justify-between p-3 rounded-xl border border-[var(--border-color)] hover:bg-blue-600/10 hover:border-blue-600 transition-all group">
+                    <div class="flex items-center">
+                        <div
+                            class="p-2 bg-blue-600/20 text-blue-600 rounded-lg mr-3 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-file-import"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold">Importar Estoque</p>
+                            <p class="text-[10px] text-muted text-card-muted">Atualizar estoque via XLSX</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-upload text-muted text-card-muted"></i>
+                </button>
+
+                <!-- Consumo por Data -->
+                <form action="{{ url_for('inventory.export_usage_excel') }}" method="GET" class="space-y-2">
+                    <div class="p-3 rounded-xl border border-[var(--border-color)]">
+                        <p class="text-sm font-bold mb-2 flex items-center">
+                            <i class="fa-solid fa-receipt text-orange-600 mr-2"></i> Relatório de Consumo
+                        </p>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <div class="bg-[var(--bg-main)] p-2 rounded-lg border border-[var(--border-color)]">
+                                <label for="start_date"
+                                    class="text-[9px] uppercase font-black text-muted text-card-muted block mb-1">Início</label>
+                                <input type="date" id="start_date" name="start_date"
+                                    class="bg-transparent w-full text-xs font-bold outline-none border-0 p-0">
+                            </div>
+                            <div class="bg-[var(--bg-main)] p-2 rounded-lg border border-[var(--border-color)]">
+                                <label for="end_date"
+                                    class="text-[9px] uppercase font-black text-muted text-card-muted block mb-1">Fim</label>
+                                <input type="date" id="end_date" name="end_date"
+                                    class="bg-transparent w-full text-xs font-bold outline-none border-0 p-0">
+                            </div>
+                        </div>
+                        <button type="submit"
+                            class="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[11px] font-bold transition-all shadow-lg shadow-orange-600/20">
+                            <i class="fa-solid fa-file-export mr-1"></i> Gerar Relatório de Consumo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Lista de Itens -->
+    <div class="stitch-surface border rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-dark-border">
+            <h3 class="text-lg font-bold">Itens Cadastrados</h3>
+        </div>
+
+        {% if items %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-[var(--bg-main)]/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-widest text-muted">Item
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-widest text-muted">
+                            Categoria</th>
+                        <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-widest text-muted">
+                            Estoque</th>
+                        <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-widest text-muted">
+                            Valor</th>
+                        <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-widest text-muted">
+                            Localização</th>
+                        <th class="px-6 py-3 text-right text-xs font-black uppercase tracking-widest text-muted">
+                            Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-color)]">
+                    {% for item in items %}
+                    <tr class="hover:bg-[var(--bg-main)] transition-colors">
+                        <td class="px-6 py-4">
+                            <div>
+                                <div class="text-sm font-bold text-main">{{ item.name }}</div>
+                                {% if item.description %}
+                                <div class="text-[10px] text-muted truncate max-w-xs">{{ item.description }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span
+                                class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-[var(--bg-main)] border border-[var(--border-color)] text-muted">{{
+                                item.category
+                                }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-2">
+                                <span
+                                    class="{% if item.is_low_stock %}text-red-500{% else %}text-green-500{% endif %} font-bold">
+                                    {{ item.quantity }}
+                                </span>
+                                {% if item.is_low_stock %}
+                                <i class="fa-solid fa-triangle-exclamation text-red-500 text-[10px]"
+                                    title="Estoque baixo"></i>
+                                {% endif %}
+                                <span class="text-[10px] text-muted font-medium">/ {{ item.min_quantity }} min</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm">
+                                <div class="text-green-600 font-bold">R$ {{ "%.2f"|format(item.total_value) }}</div>
+                                <div class="text-[10px] text-muted">R$ {{ "%.2f"|format(item.unit_cost) }} un.</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-medium text-main">
+                            {{ item.location or '-' }}
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <a href="{{ url_for('inventory.edit_item', id=item.id) }}"
+                                class="inline-flex items-center px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-all">
+                                <i class="fa-solid fa-edit mr-1"></i> Editar
+                            </a>
+                            <form method="POST" action="{{ url_for('inventory.delete_item', id=item.id) }}"
+                                class="inline" onsubmit="return confirm('Tem certeza que deseja excluir este item?');">
+                                <button type="submit"
+                                    class="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-all">
+                                    <i class="fa-solid fa-trash mr-1"></i> Excluir
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="px-6 py-12 text-center">
+            <i class="fa-solid fa-box-open text-4xl text-slate-600 mb-4"></i>
+            <h3 class="text-lg font-medium text-slate-400 mb-2">Nenhum item encontrado</h3>
+            <p class="text-slate-500 mb-4">Comece cadastrando seu primeiro item no inventário.</p>
+            <a href="{{ url_for('inventory.create_item') }}"
+                class="inline-flex items-center px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-all">
+                <i class="fa-solid fa-plus mr-2"></i> Cadastrar Primeiro Item
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    <!-- Import Modal -->
+    <div x-show="showImport"
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        <div @click.away="showImport = false"
+            class="stitch-surface w-full max-w-md rounded-3xl border shadow-2xl p-8 space-y-6 animate-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold">Importar Estoque</h3>
+                <button @click="showImport = false" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-xs text-blue-500 space-y-2">
+                <p class="font-bold flex items-center">
+                    <i class="fa-solid fa-circle-info mr-2"></i> Instruções:
+                </p>
+                <ul class="list-disc list-inside space-y-1 opacity-80">
+                    <li>Use um arquivo Excel (.xlsx)</li>
+                    <li>Colunas obrigatórias: <b>Nome, Categoria, Quantidade</b></li>
+                    <li>O sistema busca por nome: atualiza se existir, cria se for novo.</li>
+                </ul>
+            </div>
+
+            <form action="{{ url_for('inventory.import_inventory') }}" method="POST" enctype="multipart/form-data"
+                class="space-y-6">
+                <div class="relative group">
+                    <input type="file" name="file" id="fileImport" accept=".xlsx, .xls" required
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div
+                        class="border-2 border-dashed border-[var(--border-color)] rounded-2xl p-8 text-center group-hover:border-primary transition-all group-hover:bg-primary/5">
+                        <i class="fa-solid fa-cloud-upload text-3xl text-primary mb-3"></i>
+                        <p class="text-sm font-medium" id="fileName">Clique ou arraste o arquivo XLSX</p>
+                        <p class="text-[10px] text-muted mt-1 uppercase font-bold">Máximo 10MB</p>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button type="button" @click="showImport = false"
+                        class="flex-1 py-3 px-4 border border-[var(--border-color)] text-muted rounded-xl font-bold hover:bg-slate-800 transition-all">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20">
+                        Iniciar Importação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('fileImport')?.addEventListener('change', function (e) {
+            const fileName = e.target.files[0]?.name || 'Nenhum arquivo selecionado';
+            document.getElementById('fileName').textContent = fileName;
+        });
+    </script>
+</div>
+{% endblock %}

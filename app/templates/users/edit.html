@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-8 pb-12">
+    <!-- Header -->
+    <div class="flex items-center space-x-4 mb-4">
+        <a href="{{ url_for('users.list_users') }}"
+            class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-500/10 text-muted hover:bg-slate-500/20 transition-all">
+            <i class="fa-solid fa-arrow-left text-sm"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-black text-main tracking-tight">{{ title }}</h1>
+            <p class="text-xs text-muted">Preencha os dados abaixo para configurar o perfil do usuário</p>
+        </div>
+    </div>
+
+    <div class="stitch-surface border rounded-[32px] overflow-hidden shadow-sm">
+        <div class="p-8 md:p-10">
+            <form method="POST" class="space-y-6">
+                <!-- Username & Status Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="username"
+                            class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Nome de
+                            Usuário</label>
+                        <div class="relative group">
+                            <i
+                                class="fa-solid fa-at absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
+                            <input type="text" name="username" id="username" value="{{ user.username if user else '' }}"
+                                required placeholder="ex: joao.silva"
+                                class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="role"
+                            class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Função /
+                            Permissão</label>
+                        <div class="relative">
+                            <i
+                                class="fa-solid fa-shield-halved absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs transition-colors"></i>
+                            <select id="role" name="role"
+                                class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-10 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium appearance-none">
+                                <option value="user" {% if user and user.role=='user' %}selected{% endif %}>Usuário
+                                    Padrão</option>
+                                <option value="admin" {% if user and user.role=='admin' %}selected{% endif %}>
+                                    Administrador</option>
+                            </select>
+                            <i
+                                class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-muted text-[10px] pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Info Section -->
+                <div class="space-y-2">
+                    <label for="fullname"
+                        class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Nome
+                        Completo</label>
+                    <div class="relative group">
+                        <i
+                            class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
+                        <input type="text" name="fullname" id="fullname"
+                            value="{{ user.fullname if user and user.fullname else '' }}"
+                            placeholder="ex: João da Silva"
+                            class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="email"
+                        class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Email
+                        Profissional</label>
+                    <div class="relative group">
+                        <i
+                            class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
+                        <input type="email" name="email" id="email" value="{{ user.email if user else '' }}" required
+                            placeholder="ex: joao@empresa.com"
+                            class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                    </div>
+                </div>
+
+                <!-- Password Section -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between ml-1">
+                        <label for="password"
+                            class="block text-[10px] font-black uppercase tracking-widest text-muted">Senha de
+                            Acesso</label>
+                        {% if user %}
+                        <span
+                            class="text-[9px] text-orange-500 font-bold uppercase tracking-wider bg-orange-500/10 px-2 py-0.5 rounded">Opcional</span>
+                        {% endif %}
+                    </div>
+                    <div class="relative group">
+                        <i
+                            class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
+                        <input type="password" name="password" id="password" {% if not user %}required{% endif %}
+                            placeholder="{% if user %}Deixe em branco para não alterar{% else %}Mínimo 6 caracteres{% endif %}"
+                            class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-6 flex flex-col sm:flex-row gap-3">
+                    <button type="submit"
+                        class="flex-grow order-1 sm:order-2 py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20 uppercase tracking-widest text-xs">
+                        <i class="fa-solid fa-check-circle mr-2"></i> {{ 'Salvar Alterações' if user else 'Criar
+                        Usuário' }}
+                    </button>
+                    <a href="{{ url_for('users.list_users') }}"
+                        class="flex-grow sm:flex-none order-2 sm:order-1 py-4 px-8 bg-[var(--bg-main)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-muted rounded-2xl font-bold transition-all uppercase tracking-widest text-xs text-center">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

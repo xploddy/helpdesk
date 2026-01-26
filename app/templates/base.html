@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - Help Desk</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0084FF">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
+
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            DEFAULT: '#2563eb', /* Blue 600 */
+                            dark: '#1d4ed8', /* Blue 700 */
+                        },
+                        dark: {
+                            bg: '#020617',
+                            surface: '#0f172a',
+                            border: '#1e293b',
+                        },
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Variables for Light/Dark Mode consistency with Stitch Style */
+        /* Variables for Light/Dark Mode consistency with Stitch Style */
+        :root {
+            --bg-main: #f8fafc;
+            /* Slate-50 */
+            --surface: #ffffff;
+            --border-color: #e2e8f0;
+            /* Slate-200 */
+            --text-main: #0f172a;
+            /* Slate-900 */
+            --text-muted: #64748b;
+            /* Slate-500 */
+            --input-bg: #ffffff;
+            --nav-bg: #ffffff;
+            --card-text-muted: #475569;
+        }
+
+        .dark {
+            --bg-main: #020617;
+            /* Slate-950 */
+            --surface: #0f172a;
+            /* Slate-900 */
+            --border-color: #1e293b;
+            /* Slate-800 */
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --input-bg: #020617;
+            --nav-bg: #0f172a;
+            --card-text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-main) !important;
+            color: var(--text-main) !important;
+        }
+
+        .stitch-surface {
+            background-color: var(--surface) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-main) !important;
+        }
+
+        .stitch-input {
+            background-color: var(--input-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-main) !important;
+        }
+
+        .stitch-input:focus {
+            border-color: #0084FF !important;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.2);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* General text utility override */
+        .text-main {
+            color: var(--text-main) !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+    </style>
+</head>
+
+
+<body class="font-sans h-screen flex flex-col transition-colors duration-200">
+
+    {% if current_user.is_authenticated and not is_embedded %}
+    <!-- Mobile Header (User Icon Only) -->
+    <div class="pt-6 px-6 flex justify-end" x-data="{ open: false }">
+        <div class="relative">
+            <button @click="open = !open"
+                class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition duration-150 ease-in-out">
+                <i class="fa-solid fa-circle-user text-primary text-4xl"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div x-show="open" @click.away="open = false"
+                class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50 focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+                style="display: none;">
+                <div class="px-4 py-2 border-b dark:border-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Logado como</p>
+                    <p class="text-sm font-medium text-gray-900 truncate dark:text-white">{{ current_user.username }}
+                    </p>
+                </div>
+
+                {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('main.admin_stats') }}"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-chart-line mr-2"></i> Estatísticas
+                </a>
+                <a href="{{ url_for('settings.index') }}"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-cog mr-2"></i> Configurações
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('auth.change_password') }}"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-key mr-2"></i> Alterar Senha
+                </a>
+
+                <a href="#" onclick="toggleTheme(); return false;"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-moon mr-2"></i> Alterar Tema
+                </a>
+
+                <a href="{{ url_for('auth.logout') }}"
+                    class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-sign-out-alt mr-2"></i> Sair
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <main class="flex-grow {% if not is_embedded %}container mx-auto px-4 pb-24 pt-2{% else %}p-0{% endif %}">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-4">
+            {% for category, message in messages %}
+            <div
+                class="p-4 mb-2 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if current_user.is_authenticated and not is_embedded %}
+    <!-- Bottom Navigation Bar -->
+    <nav
+        class="fixed bottom-0 w-full stitch-surface border-t pb-4 pt-2 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 transition-colors">
+        <div class="flex justify-between items-center max-w-lg mx-auto">
+            <a href="{{ url_for('main.index') }}" class="flex flex-col items-center group">
+                <div
+                    class="p-1 rounded-full {% if request.endpoint == 'main.index' %}text-primary{% else %}text-slate-500 group-hover:text-primary{% endif %} mb-1 transition-colors">
+                    <i class="fa-solid fa-gauge-high text-xl w-6 h-6 flex justify-center items-center"></i>
+                </div>
+                <span
+                    class="text-[10px] font-medium {% if request.endpoint == 'main.index' %}text-primary{% else %}text-slate-500{% endif %}">Dashboard</span>
+            </a>
+
+            <a href="{{ url_for('tickets.list_tickets') }}" class="flex flex-col items-center group">
+                <div
+                    class="p-1 rounded-full {% if 'tickets' in request.endpoint %}text-primary{% else %}text-slate-500 group-hover:text-primary{% endif %} mb-1 transition-colors">
+                    <i class="fa-solid fa-phone text-xl"></i>
+                </div>
+                <span class="text-[10px] font-medium text-slate-500">Chamados</span>
+            </a>
+
+            <a href="{{ url_for('users.list_users') }}" class="flex flex-col items-center group">
+                <div class="p-1 rounded-full text-slate-500 group-hover:text-primary mb-1 transition-colors">
+                    <i class="fa-solid fa-user-group text-xl"></i>
+                </div>
+                <span class="text-[10px] font-medium text-slate-500">Usuários</span>
+            </a>
+
+            {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('inventory.index') }}" class="flex flex-col items-center group">
+                <div
+                    class="p-1 rounded-full {% if 'inventory' in request.endpoint %}text-primary{% else %}text-slate-500 group-hover:text-primary{% endif %} mb-1 transition-colors">
+                    <i class="fa-solid fa-box text-xl"></i>
+                </div>
+                <span
+                    class="text-[10px] font-medium {% if 'inventory' in request.endpoint %}text-primary{% else %}text-slate-500{% endif %}">Inventário</span>
+            </a>
+            {% endif %}
+
+            <a href="{% if current_user.role == 'admin' %}{{ url_for('settings.index') }}{% else %}#{% endif %}"
+                class="flex flex-col items-center group">
+                <div class="p-1 rounded-full text-slate-500 group-hover:text-primary mb-1 transition-colors">
+                    <i class="fa-solid fa-cog text-xl"></i>
+                </div>
+                <span class="text-[10px] font-medium text-slate-500">Configurações</span>
+            </a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <script>
+        // Check for saved theme
+        if (localStorage.theme === 'dark') {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+    </script>
+</body>
+
+</html>

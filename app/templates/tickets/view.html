@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}Chamado #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header do Chamado -->
+    <div class="stitch-surface border shadow overflow-hidden sm:rounded-2xl mb-6 transition-colors duration-200">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <div>
+                <h3 class="text-lg leading-6 font-bold text-main">
+                    #{{ ticket.id }} - {{ ticket.title }}
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-muted">
+                    Aberto por {{ ticket.author.fullname or ticket.author.username }} ({{ ticket.author.username }}) em
+                    {{ ticket.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                </p>
+            </div>
+            <div>
+                {% if (current_user.id == ticket.user_id or current_user.role == 'admin') and ticket.status in
+                ['Resolvido', 'Fechado'] %}
+                <form action="{{ url_for('tickets.reopen_ticket', id=ticket.id) }}" method="POST" class="inline-block">
+                    <button type="submit"
+                        class="mr-3 text-sm text-warning hover:text-orange-700 font-medium bg-transparent border-none cursor-pointer">
+                        <i class="fa-solid fa-rotate-left"></i> Reabrir Chamado
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if current_user.role == 'admin' or (current_user.id == ticket.user_id and not ticket.assigned_to_id
+                and ticket.status == 'Aberto') %}
+                <form action="{{ url_for('tickets.delete_ticket', id=ticket.id) }}" method="POST"
+                    onsubmit="return confirm('Tem certeza que deseja excluir este chamado?');" class="inline-block">
+                    <button type="submit"
+                        class="mr-3 text-sm text-red-600 hover:text-red-900 font-medium bg-transparent border-none cursor-pointer">
+                        <i class="fa-solid fa-trash"></i> Excluir
+                    </button>
+                </form>
+                {% endif %}
+                {% if current_user.role == 'admin' or current_user.id == ticket.user_id %}
+                <a href="{{ url_for('tickets.edit_ticket', id=ticket.id) }}"
+                    class="mr-3 text-sm text-primary hover:text-blue-900 font-medium">
+                    <i class="fa-solid fa-edit"></i> Editar
+                </a>
+                {% endif %}
+                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full 
+                    {% if ticket.status == 'Aberto' %}bg-yellow-100 text-yellow-800
+                    {% elif ticket.status == 'Em andamento' %}bg-blue-100 text-blue-800
+                    {% elif ticket.status == 'Resolvido' %}bg-green-100 text-green-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ ticket.status }}
+                </span>
+            </div>
+        </div>
+        <div class="border-t border-[var(--border-color)] px-4 py-5 sm:p-0">
+            <dl class="sm:divide-y sm:divide-[var(--border-color)]">
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-muted">Categoria</dt>
+                    <dd class="mt-1 text-sm text-main sm:mt-0 sm:col-span-2">{{ ticket.category }}</dd>
+                </div>
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-muted">Prioridade</dt>
+                    <dd class="mt-1 text-sm text-main sm:mt-0 sm:col-span-2">
+                        <span class="font-bold 
+                            {% if ticket.priority == 'Critica' %}text-red-500
+                            {% elif ticket.priority == 'Alta' %}text-orange-500
+                            {% else %}text-main{% endif %}">
+                            {{ ticket.priority }}
+                        </span>
+                    </dd>
+                </div>
+                <!-- SLA Display -->
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-muted">Prazo (SLA)</dt>
+                    <dd class="mt-1 text-sm text-main sm:mt-0 sm:col-span-2">
+                        {% if ticket.due_at %}
+                        <span class="mr-2 font-mono">{{ ticket.due_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        {% if ticket.status in ['Aberto', 'Em andamento'] %}
+                        {% if ticket.due_at < now %} <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> Atrasado
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">
+                                <i class="fa-solid fa-clock mr-1"></i> No Prazo
+                            </span>
+                            {% endif %}
+                            {% endif %}
+                            {% else %}
+                            <span class="text-slate-400 italic">Não definido</span>
+                            {% endif %}
+                    </dd>
+                </div>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-300 sm:mt-0 sm:col-span-2 whitespace-pre-wrap">{{
+                    ticket.description
+                    }}</dd>
+                {% if ticket.assigned_to %}
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Técnico Atribuído</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium text-primary">
+                        <div><i class="fa-solid fa-user-gear mr-1"></i> {{ ticket.assigned_to.fullname }}</div>
+                        {% if ticket.assigned_by %}
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">
+                            (Atribuído por {{ ticket.assigned_by.username }})
+                        </div>
+                        {% endif %}
+                    </dd>
+                </div>
+                {% endif %}
+                {% if ticket.attachments.count() > 0 %}
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Anexos</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                        <ul class="border border-gray-200 rounded-md divide-y divide-gray-200 mb-4">
+                            {% for attachment in ticket.attachments %}
+                            <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                                <div class="w-0 flex-1 flex items-center">
+                                    <i class="fa-solid fa-paperclip text-gray-400 flex-shrink-0"></i>
+                                    <span class="ml-2 flex-1 w-0 truncate">
+                                        {{ attachment.original_filename }}
+                                    </span>
+                                </div>
+                                <div class="ml-4 flex-shrink-0">
+                                    <a href="{{ url_for('tickets.download_file', filename=attachment.filename) }}"
+                                        target="_blank" class="font-medium text-primary hover:text-blue-800">
+                                        Visualizar / Download
+                                    </a>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                        <!-- Inline Images Overlay -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {% for attachment in ticket.attachments %}
+                            {% set ext = attachment.filename.split('.')[-1].lower() %}
+                            {% if ext in ['png', 'jpg', 'jpeg', 'gif', 'webp'] %}
+                            <div class="relative group">
+                                <p class="text-xs text-gray-500 mb-1">{{ attachment.original_filename }}</p>
+                                <a href="{{ url_for('tickets.download_file', filename=attachment.filename) }}"
+                                    target="_blank">
+                                    <img src="{{ url_for('tickets.download_file', filename=attachment.filename) }}"
+                                        alt="{{ attachment.original_filename }}"
+                                        class="rounded-lg border border-gray-200 shadow-sm max-h-64 object-contain hover:opacity-90 transition-opacity">
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </dd>
+                </div>
+                {% endif %}
+
+                {% if current_user.role == 'admin' %}
+                <div
+                    class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-[var(--surface)]/50 border-t border-[var(--border-color)]">
+                    <dt class="text-[10px] uppercase font-bold tracking-widest text-muted">Ações Admin</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 space-y-4">
+                        <!-- Update Status -->
+                        <form action="{{ url_for('tickets.update_status', id=ticket.id) }}" method="POST"
+                            class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                            <label class="text-xs text-muted w-full sm:w-auto">Alterar Status:</label>
+                            <select name="status"
+                                class="stitch-input block w-full sm:w-48 pl-3 pr-10 py-2 text-sm rounded-xl focus:outline-none transition-all">
+                                <option value="Aberto" {% if ticket.status=='Aberto' %}selected{% endif %}>Aberto
+                                </option>
+                                <option value="Em andamento" {% if ticket.status=='Em andamento' %}selected{% endif %}>
+                                    Em andamento</option>
+                                <option value="Resolvido" {% if ticket.status=='Resolvido' %}selected{% endif %}>
+                                    Resolvido</option>
+                                <option value="Fechado" {% if ticket.status=='Fechado' %}selected{% endif %}>Fechado
+                                </option>
+                            </select>
+                            <button type="submit"
+                                class="w-full sm:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-lg shadow-primary/20 text-sm font-bold rounded-xl text-white bg-primary hover:bg-primary-dark focus:outline-none transition-all">
+                                Atualizar
+                            </button>
+                        </form>
+
+                        <!-- Assign Technician -->
+                        <form action="{{ url_for('tickets.assign_technician', id=ticket.id) }}" method="POST"
+                            class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-[var(--border-color)]">
+                            <label class="text-xs text-muted w-full sm:w-auto">Atribuir Técnico:</label>
+                            <select name="technician_id"
+                                class="stitch-input block w-full sm:w-48 pl-3 pr-10 py-2 text-sm rounded-xl focus:outline-none transition-all">
+                                <option value="">Selecionar técnico...</option>
+                                {% for tech in technicians %}
+                                <option value="{{ tech.id }}" {% if ticket.assigned_to_id==tech.id %}selected{% endif
+                                    %}>
+                                    {{ tech.fullname }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit"
+                                class="w-full sm:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-lg shadow-primary/10 text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all">
+                                Atribuir
+                            </button>
+                        </form>
+
+                        <!-- Add Item Button and Modal -->
+                    <dt class="text-[10px] uppercase font-bold tracking-widest text-muted">Materias / Itens</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 space-y-4">
+                        <div x-data="{ open: false }" class="pt-4 border-t border-[var(--border-color)]">
+                            <button @click="open = true"
+                                class="w-full sm:w-auto inline-flex items-center px-4 py-2 bg-primary hover:bg-primary-dark text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20">
+                                <i class="fa-solid fa-plus mr-2"></i> Adicionar Item
+                            </button>
+
+                            <!-- Modal Overlay -->
+                            <div x-show="open" x-transition:enter="transition ease-out duration-300"
+                                x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                class="fixed inset-0 z-[100] overflow-y-auto" style="display: none;">
+                                <div
+                                    class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                    <div class="fixed inset-0 transition-opacity" aria-hidden="true"
+                                        @click="open = false">
+                                        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+                                    </div>
+
+                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
+                                        aria-hidden="true">&#8203;</span>
+
+                                    <!-- Modal Content -->
+                                    <div x-show="open" x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave="transition ease-in duration-200"
+                                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        class="relative inline-block align-bottom stitch-surface rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-[var(--border-color)]">
+
+                                        <div class="px-6 py-6">
+                                            <div class="flex justify-between items-center mb-6">
+                                                <h3 class="text-lg font-black text-main uppercase tracking-widest">
+                                                    Incluir
+                                                    Item</h3>
+                                                <button @click="open = false" class="text-muted hover:text-danger">
+                                                    <i class="fa-solid fa-xmark text-xl"></i>
+                                                </button>
+                                            </div>
+
+                                            <form action="{{ url_for('tickets.add_ticket_item', id=ticket.id) }}"
+                                                method="POST" class="space-y-4">
+                                                <div>
+                                                    <label
+                                                        class="block text-[10px] font-black text-muted mb-2 uppercase tracking-widest">Pesquisar
+                                                        Material</label>
+                                                    <div class="relative group">
+                                                        <input type="text" id="item-search" onkeyup="filterItems()"
+                                                            placeholder="Digite o nome do item..." autocomplete="off"
+                                                            class="stitch-input block w-full pl-3 pr-10 py-3 text-sm rounded-t-2xl focus:border-primary border-b-0 outline-none transition-all z-10">
+
+                                                        <div class="absolute right-3 top-3.5 flex items-center">
+                                                            <button type="button" id="clear-search"
+                                                                onclick="clearItemSearch()"
+                                                                class="hidden text-muted hover:text-danger transition-colors mr-1">
+                                                                <i class="fa-solid fa-circle-xmark text-sm"></i>
+                                                            </button>
+                                                            <i
+                                                                class="fa-solid fa-search text-xs text-muted opacity-50"></i>
+                                                        </div>
+                                                    </div>
+                                                    <select name="item_id" id="item_id" required size="5"
+                                                        onchange="syncSelectionToSearch(this)"
+                                                        class="stitch-input block w-full px-3 py-2 text-sm rounded-b-2xl focus:border-primary border-t-0 outline-none transition-all h-48 scrollbar-thin overflow-y-auto">
+                                                        {% for item in available_items %}
+                                                        <option value="{{ item.id }}"
+                                                            class="py-2 px-3 hover:bg-primary/10 rounded-xl cursor-pointer transition-colors border-b border-[var(--border-color)] last:border-0 border-dashed text-main">
+                                                            {{ item.name }} (Qtd: {{ item.quantity }})
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <div class="flex gap-4">
+                                                    <div class="w-1/3">
+                                                        <label
+                                                            class="block text-[10px] font-black text-muted mb-2 uppercase tracking-widest">Quantidade</label>
+                                                        <input type="number" name="quantity" value="1" min="1" required
+                                                            class="stitch-input block w-full px-4 py-3 rounded-2xl focus:border-primary outline-none transition-all text-sm font-bold">
+                                                    </div>
+                                                    <div class="w-2/3 flex items-end">
+                                                        <button type="submit"
+                                                            class="w-full py-3.5 bg-success hover:bg-success/90 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition-all shadow-lg shadow-success/20">
+                                                            <i class="fa-solid fa-plus mr-2"></i> Incluir no Chamado
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </dd>
+                </div>
+                {% endif %}
+
+                <!-- Itens Utilizados Display Panel -->
+                <div class="px-4 py-5 sm:px-6 border-t border-[var(--border-color)]">
+                    <dt class="text-xs font-black text-muted uppercase tracking-widest mb-4">Itens Utilizados no Chamado
+                    </dt>
+                    <dd class="mt-1 text-sm text-main">
+                        <div class="space-y-2">
+                            {% for ticket_item in used_items %}
+                            <div
+                                class="flex items-center justify-between p-3 bg-[var(--bg-main)]/50 rounded-lg border border-[var(--border-color)]">
+                                <div class="flex-1">
+                                    <div class="font-medium text-main">{{ ticket_item.item.name }}</div>
+                                    <div class="text-xs text-muted">
+                                        Quantidade: {{ ticket_item.quantity_used }} •
+                                        Categoria: {{ ticket_item.item.category }}
+                                        {% if ticket_item.item.location %}• Local: {{ ticket_item.item.location }}{%
+                                        endif %}
+                                    </div>
+                                    {% if ticket_item.notes %}
+                                    <div class="text-xs text-muted mt-1 opacity-70">
+                                        <i class="fa-solid fa-sticky-note mr-1"></i>{{ ticket_item.notes }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="text-right flex items-center space-x-4">
+                                    <div class="mr-2">
+                                        <div class="text-sm font-bold text-green-500">
+                                            R$ {{ "%.2f"|format(ticket_item.quantity_used * ticket_item.item.unit_cost)
+                                            }}
+                                        </div>
+                                        <div class="text-[10px] text-muted font-medium">
+                                            {{ ticket_item.used_at.strftime('%d/%m/%Y %H:%M') }}
+                                        </div>
+                                    </div>
+                                    {% if current_user.role == 'admin' %}
+                                    <form action="{{ url_for('tickets.remove_ticket_item', item_id=ticket_item.id) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Remover este item e devolver ao estoque?');">
+                                        <button type="submit" class="text-red-400 hover:text-red-600 transition-colors">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div
+                                class="text-center py-6 border-2 border-dashed border-[var(--border-color)] rounded-2xl">
+                                <i class="fa-solid fa-box-open text-3xl text-muted mb-2 opacity-20"></i>
+                                <p class="text-xs text-muted">Nenhum item utilizado neste chamado.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if used_items %}
+                        <div class="mt-3 pt-3 border-t border-[var(--border-color)]">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="font-medium text-muted">Total de itens utilizados:</span>
+                                <span class="font-bold text-main">{{ used_items|length }} tipos</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm mt-1">
+                                <span class="font-medium text-muted">Custo total:</span>
+                                <span class="font-bold text-green-600">
+                                    R$ {{ "%.2f"|format(used_items|sum(attribute='total_cost')) }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </dd>
+                </div>
+
+                <script>
+                    function filterItems() {
+                        const input = document.getElementById('item-search');
+                        const clearBtn = document.getElementById('clear-search');
+                        const filter = input.value.toLowerCase();
+                        const select = document.getElementById('item_id');
+                        const options = select.getElementsByTagName('option');
+
+                        if (filter.length > 0) {
+                            clearBtn.classList.remove('hidden');
+                        } else {
+                            clearBtn.classList.add('hidden');
+                        }
+
+                        for (let i = 0; i < options.length; i++) {
+                            const txtValue = options[i].textContent || options[i].innerText;
+                            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                                options[i].style.display = "";
+                            } else {
+                                options[i].style.display = "none";
+                            }
+                        }
+                    }
+
+                    function clearItemSearch() {
+                        const input = document.getElementById('item-search');
+                        input.value = '';
+                        filterItems();
+                        input.focus();
+                    }
+
+                    function syncSelectionToSearch(select) {
+                        const input = document.getElementById('item-search');
+                        if (select.selectedIndex !== -1) {
+                            const selectedText = select.options[select.selectedIndex].text;
+                            // Pega só o nome antes do (Qtd: ...)
+                            const itemName = selectedText.split(' (Qtd:')[0].trim();
+                            input.value = itemName;
+
+                            // Mostra o X
+                            document.getElementById('clear-search').classList.remove('hidden');
+                        }
+                    }
+                </script>
+
+            </dl>
+        </div>
+    </div>
+
+    <!-- Comentários -->
+    <div class="stitch-surface border shadow sm:rounded-2xl transition-colors duration-200">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg font-bold text-main">Comentários</h3>
+        </div>
+        <div class="border-t border-[var(--border-color)]">
+            <div class="px-4 py-5 sm:px-6">
+                <ul class="space-y-4">
+                    {% for comment in ticket.comments %}
+                    <li class="bg-[var(--bg-main)]/50 rounded-xl p-4 border border-[var(--border-color)]">
+                        <div class="flex justify-between">
+                            <span class="font-bold text-sm text-main">{{ comment.author.username
+                                }}</span>
+                            <span class="text-xs text-muted">{{
+                                comment.created_at.strftime('%d/%m/%Y %H:%M')
+                                }}</span>
+                        </div>
+                        <p class="mt-2 text-sm text-muted whitespace-pre-wrap">{{ comment.content
+                            }}</p>
+                    </li>
+                    {% else %}
+                    <li class="text-gray-500 text-sm text-center py-4">Nenhum comentário ainda.</li>
+                    {% endfor %}
+                </ul>
+
+                <hr class="my-6">
+
+                <form action="{{ url_for('tickets.add_comment', id=ticket.id) }}" method="POST">
+                    <div class="mb-4">
+                        <label for="content" class="sr-only">Adicionar comentário</label>
+                        <textarea id="content" name="content" rows="3"
+                            class="stitch-input block w-full px-4 py-3 rounded-xl border focus:border-primary outline-none text-sm transition-all"
+                            placeholder="Escreva um comentário..."></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit"
+                            class="inline-flex justify-center py-3 px-8 border border-transparent shadow-lg shadow-primary/20 text-sm font-bold rounded-2xl text-white bg-primary hover:bg-primary-dark focus:outline-none transition-all">
+                            Comentar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+    <!-- Profile Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 stitch-surface rounded-xl flex items-center justify-center border">
+                <i class="fa-solid fa-user text-primary text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400">Bem-vindo de volta,</p>
+                <h3 class="text-xl font-bold">{{ current_user.fullname }}</h3>
+            </div>
+        </div>
+        <a href="{{ url_for('tickets.list_tickets') }}"
+            class="w-10 h-10 stitch-surface rounded-xl flex items-center justify-center border relative hover:text-primary transition-colors">
+            <i class="fa-solid fa-bell text-slate-400"></i>
+            <span
+                class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[var(--surface)]"></span>
+        </a>
+    </div>
+
+    <!-- New Ticket Button -->
+    <a href="{{ url_for('tickets.create_ticket') }}"
+        class="flex items-center justify-center space-x-3 w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-xl font-semibold transition-all shadow-lg shadow-primary/20">
+        <div class="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-plus text-xs"></i>
+        </div>
+        <span>Novo Chamado de Suporte</span>
+    </a>
+
+    <!-- Ticket Summary -->
+    <div>
+        <div class="flex justify-between items-center mb-4">
+            <h4 class="font-bold text-main">Resumo dos Chamados</h4>
+            <a href="{{ url_for('tickets.list_tickets') }}" class="text-xs text-primary font-medium">Ver Todos</a>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+            <a href="{{ url_for('tickets.list_tickets', status='Em andamento') }}"
+                class="stitch-surface p-4 rounded-2xl border hover:border-primary transition-all">
+                <div class="flex items-center space-x-2 text-slate-400 mb-2">
+                    <i class="fa-solid fa-spinner text-indigo-400 text-xs"></i>
+                    <span class="text-[10px] uppercase font-bold tracking-wider">Em Andamento</span>
+                </div>
+                <p class="text-2xl font-bold">{{ stats.in_progress }}</p>
+            </a>
+            <a href="{{ url_for('tickets.list_tickets', status='Aberto') }}"
+                class="stitch-surface p-4 rounded-2xl border hover:border-primary transition-all">
+                <div class="flex items-center space-x-2 text-slate-400 mb-2">
+                    <i class="fa-solid fa-clock text-amber-400 text-xs"></i>
+                    <span class="text-[10px] uppercase font-bold tracking-wider">Pendentes</span>
+                </div>
+                <p class="text-2xl font-bold">{{ stats.open }}</p>
+            </a>
+            <a href="{{ url_for('tickets.list_tickets', status='Resolvido') }}"
+                class="stitch-surface p-4 rounded-2xl border hover:border-primary transition-all">
+                <div class="flex items-center space-x-2 text-slate-400 mb-2">
+                    <i class="fa-solid fa-check-circle text-emerald-400 text-xs"></i>
+                    <span class="text-[10px] uppercase font-bold tracking-wider">Resolvidos</span>
+                </div>
+                <p class="text-2xl font-bold">{{ stats.closed }}</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div>
+        <h4 class="font-bold text-main mb-4">Atividade Recente</h4>
+        <div class="space-y-3">
+            {% for ticket in recent_tickets %}
+            <a href="{{ url_for('tickets.view_ticket', id=ticket.id) }}"
+                class="flex items-start space-x-4 stitch-surface p-4 rounded-2xl border hover:border-primary transition-all group">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors
+                    {% if ticket.status == 'Aberto' %}bg-amber-500/10 text-amber-500
+                    {% elif ticket.status == 'Em andamento' %}bg-indigo-500/10 text-indigo-500
+                    {% elif ticket.status == 'Resolvido' %}bg-emerald-500/10 text-emerald-500
+                    {% else %}bg-slate-500/10 text-slate-500{% endif %}">
+                    {% if ticket.status == 'Aberto' %}<i class="fa-solid fa-plus-circle"></i>
+                    {% elif ticket.status == 'Em andamento' %}<i class="fa-solid fa-rotate"></i>
+                    {% elif ticket.status == 'Resolvido' %}<i class="fa-solid fa-check-double"></i>
+                    {% else %}<i class="fa-solid fa-circle-info"></i>{% endif %}
+                </div>
+                <div class="flex-grow min-w-0">
+                    <div class="flex justify-between items-start">
+                        <h5 class="text-sm font-bold text-main group-hover:text-primary transition-colors">
+                            {% if ticket.status == 'Aberto' %}Chamado #{{ ticket.id }}
+                            {% elif ticket.status == 'Em andamento' %}Chamado #{{ ticket.id }} em atendimento
+                            {% elif ticket.status == 'Resolvido' %}Chamado #{{ ticket.id }} resolvido
+                            {% else %}Chamado #{{ ticket.id }}{% endif %}
+                        </h5>
+                        <span class="text-[10px] text-muted whitespace-nowrap">{{
+                            ticket.updated_at.strftime('%H:%M') }}</span>
+                    </div>
+                    <p class="text-xs text-muted truncate mt-1">{{ ticket.title }}</p>
+                    <div class="flex items-center space-x-3 mt-2">
+                        <p class="text-[10px] text-muted flex items-center">
+                            <i class="fa-solid fa-user mr-1 opacity-50"></i> {{ ticket.author.fullname }}
+                        </p>
+                        {% if ticket.assigned_to %}
+                        <p class="text-[10px] text-primary flex items-center font-bold">
+                            <i class="fa-solid fa-user-gear mr-1 opacity-50"></i> {{ ticket.assigned_to.fullname }}
+                        </p>
+                        {% endif %}
+                        <p class="text-[10px] text-muted flex items-center">
+                            <i class="fa-solid fa-tag mr-1 opacity-50"></i> {{ ticket.category }}
+                        </p>
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <div class="text-center py-10 stitch-surface rounded-2xl border border-dashed">
+                <p class="text-sm text-slate-500">Nenhuma atividade recente</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

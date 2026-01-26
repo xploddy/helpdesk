@@ -24,13 +24,18 @@
     </div>
 
     <!-- New Ticket Button -->
-    <a href="{{ url_for('tickets.create_ticket') }}"
-        class="flex items-center justify-center space-x-3 w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-xl font-semibold transition-all shadow-lg shadow-primary/20">
-        <div class="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-            <i class="fa-solid fa-plus text-xs"></i>
+    <a href="{{ url_for('tickets.create_ticket') }}" class="flex items-center justify-center space-x-2
+          w-full sm:w-auto
+          bg-primary hover:bg-primary-dark
+          text-white py-3 px-4
+          rounded-xl font-semibold
+          transition-all shadow-lg shadow-primary/20">
+        <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-plus text-[10px]"></i>
         </div>
-        <span>Novo Chamado de Suporte</span>
+        <span>Novo Chamado</span>
     </a>
+
 
     <!-- Ticket Summary -->
     <div>

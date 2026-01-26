@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Configuração do servidor Flask
-const API_BASE_URL = 'http://192.168.1.135:5050'; // Altere para seu IP local
+const API_BASE_URL = 'http://128.202.1.87:5050'; // Altere para seu IP local
 
 const api = axios.create({
   baseURL: API_BASE_URL,

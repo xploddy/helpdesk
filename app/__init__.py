@@ -29,14 +29,19 @@ def setup_database(app):
             user_columns = [col['name'] for col in inspector.get_columns('user')]
             if 'fullname' not in user_columns:
                 with db.engine.connect() as conn:
-                    conn.execute(text("ALTER TABLE user ADD COLUMN fullname VARCHAR(200)"))
+                    # 'user' is a reserved word in Postgres, so we quote it.
+                    conn.execute(text('ALTER TABLE "user" ADD COLUMN fullname VARCHAR(200)'))
                     conn.commit()
             
             # Check Ticket table for resolved_at
             ticket_columns = [col['name'] for col in inspector.get_columns('ticket')]
             if 'resolved_at' not in ticket_columns:
                 with db.engine.connect() as conn:
-                    conn.execute(text("ALTER TABLE ticket ADD COLUMN resolved_at DATETIME"))
+                    # Postgres uses TIMESTAMP instead of DATETIME
+                    if db.engine.name == 'postgresql':
+                        conn.execute(text("ALTER TABLE ticket ADD COLUMN resolved_at TIMESTAMP"))
+                    else:
+                        conn.execute(text("ALTER TABLE ticket ADD COLUMN resolved_at DATETIME"))
                     conn.commit()
                     
         except Exception as e:

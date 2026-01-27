@@ -71,6 +71,13 @@
             --card-text-muted: #475569;
         }
 
+        html {
+            overflow-y: scroll;
+            /* Forces scrollbar to avoid horizontal jump */
+            background-color: var(--bg-main);
+            /* Ensure instant background color */
+        }
+
         .dark {
             --bg-main: #020617;
             /* Slate-950 */
@@ -85,15 +92,18 @@
             --card-text-muted: #94a3b8;
         }
 
+        html,
         body {
             background-color: var(--bg-main) !important;
             color: var(--text-main) !important;
         }
 
         .stitch-surface {
-            background-color: var(--surface) !important;
+            background-color: var(--surface);
             border-color: var(--border-color) !important;
-            color: var(--text-main) !important;
+            color: var(--text-main);
+            transform: translateZ(0);
+            /* Fixes flickering on some browsers */
         }
 
         .stitch-input {
@@ -143,7 +153,7 @@
 </head>
 
 
-<body class="font-sans h-screen flex flex-col transition-colors duration-200">
+<body class="font-sans min-h-screen flex flex-col">
 
     {% if current_user.is_authenticated and not is_embedded %}
     <!-- Mobile Header (User Icon Only) -->
@@ -214,7 +224,7 @@
     {% if current_user.is_authenticated and not is_embedded %}
     <!-- Bottom Navigation Bar -->
     <nav
-        class="fixed bottom-0 w-full stitch-surface border-t pb-4 pt-2 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 transition-colors">
+        class="fixed bottom-0 w-full stitch-surface border-t pb-4 pt-2 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
         <div class="flex justify-between items-center max-w-lg mx-auto">
             <a href="{{ url_for('main.index') }}" class="flex flex-col items-center group">
                 <div

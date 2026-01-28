@@ -240,8 +240,12 @@ def init_db():
             admin.set_password('admin')
             db.session.add(admin)
             db.session.commit()
-            return "Banco de dados inicializado com sucesso!", 200
-        return "Banco de dados já estava inicializado.", 200
+            
+        # Reseta as sequências para evitar erro de violação de ID
+        from app import reset_sequences
+        reset_sequences(current_app)
+        
+        return "Banco de dados inicializado com sucesso!", 200
     except Exception as e:
         return f"Erro ao inicializar banco: {str(e)}", 500
 
@@ -256,6 +260,11 @@ def reset_db():
         admin.set_password('admin')
         db.session.add(admin)
         db.session.commit()
+        
+        # Reseta as sequências
+        from app import reset_sequences
+        reset_sequences(current_app)
+        
         return "Banco de dados RESETADO e inicializado com sucesso!", 200
     except Exception as e:
         return f"Erro ao resetar banco: {str(e)}", 500

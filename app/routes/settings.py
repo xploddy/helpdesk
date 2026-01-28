@@ -699,6 +699,11 @@ def restore_backup():
                     
                     db.session.commit()
                     sqlite_conn.close()
+                    
+                    # FUNDAMENTAL: Resetar as sequências após migrar dados manuais
+                    from app import reset_sequences
+                    reset_sequences(current_app)
+                    
                     flash('Migração de dados SQLite para Supabase concluída com sucesso!', 'success')
                 else:
                     # Se for banco local, apenas copia o arquivo (comportamento antigo)

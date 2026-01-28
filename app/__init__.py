@@ -26,6 +26,23 @@ def setup_database(app):
         except Exception as e:
             app.logger.error(f"Erro crítico no banco de dados: {e}")
 
+def reset_sequences(app):
+    """Reseta as sequências de ID no Postgres para evitar erro de violação de ID único após migração"""
+    with app.app_context():
+        if db.engine.name == 'postgresql':
+            try:
+                # Busca todas as tabelas e reseta a sequência pro valor máximo do ID + 1
+                inspector = sa.inspect(db.engine)
+                for table_name in inspector.get_table_names():
+                    # Ignora tabelas sem coluna id
+                    columns = [col['name'] for col in inspector.get_columns(table_name)]
+                    if 'id' in columns:
+                        db.session.execute(text(f"SELECT setval(pg_get_serial_sequence('\"{table_name}\"', 'id'), coalesce(max(id), 0) + 1, false) FROM \"{table_name}\""))
+                db.session.commit()
+                app.logger.info("Sequências de ID resetadas com sucesso.")
+            except Exception as e:
+                app.logger.error(f"Erro ao resetar sequências: {e}")
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -47,6 +64,8 @@ def create_app(config_class=Config):
     # Run automatic migrations
     setup_database(app)
     
+    # Reseta sequências no Postgres após o setup
+    reset_sequences(app)
     # Configurações do Login Manager
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Por favor, faça login para acessar esta página.'

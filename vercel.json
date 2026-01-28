@@ -9,7 +9,7 @@
     "routes": [
         {
             "src": "/sw.js",
-            "dest": "/app/static/sw.js",
+            "dest": "/sw.js",
             "headers": {
                 "cache-control": "public, max-age=0, must-revalidate",
                 "Service-Worker-Allowed": "/"
@@ -17,7 +17,7 @@
         },
         {
             "src": "/manifest.json",
-            "dest": "/app/static/manifest.json",
+            "dest": "/manifest.json",
             "headers": {
                 "cache-control": "public, max-age=0, must-revalidate"
             }

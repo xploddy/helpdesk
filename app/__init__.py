@@ -31,9 +31,12 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     CORS(app) # Habilita CORS para todas as rotas
 
-    # Ensure required directories exist
-    os.makedirs(os.path.join(app.root_path, '..', 'instance'), exist_ok=True)
-    os.makedirs(os.path.join(app.root_path, 'uploads'), exist_ok=True)
+    # Ensure required directories exist (ignora erro se o FS for Read-Only como na Vercel)
+    try:
+        os.makedirs(os.path.join(app.root_path, '..', 'instance'), exist_ok=True)
+        os.makedirs(os.path.join(app.root_path, 'uploads'), exist_ok=True)
+    except:
+        pass
 
 
     # Initialize Flask extensions
@@ -44,6 +47,10 @@ def create_app(config_class=Config):
     # Run automatic migrations
     setup_database(app)
     
+    # Configurações do Login Manager
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Por favor, faça login para acessar esta página.'
+    login_manager.login_message_category = 'info'
 
 
     # Register blueprints

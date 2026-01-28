@@ -229,6 +229,22 @@ def export_stats():
     
     filename = f"relatorio_helpdesk_{datetime.now().strftime('%Y%m%d')}.xlsx"
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=filename)
+@main_bp.route('/init-db')
+def init_db():
+    try:
+        db.create_all()
+        
+        from app.models.user import User
+        if not User.query.first():
+            admin = User(username='admin', email='admin@local', role='admin', fullname='Administrador')
+            admin.set_password('admin')
+            db.session.add(admin)
+            db.session.commit()
+            return "Banco de dados inicializado com sucesso!", 200
+        return "Banco de dados já estava inicializado.", 200
+    except Exception as e:
+        return f"Erro ao inicializar banco: {str(e)}", 500
+
 @main_bp.route('/sw.js')
 def service_worker():
     from flask import send_from_directory

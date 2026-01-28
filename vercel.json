@@ -8,6 +8,21 @@
     ],
     "routes": [
         {
+            "src": "/sw.js",
+            "dest": "/app/static/sw.js",
+            "headers": {
+                "cache-control": "public, max-age=0, must-revalidate",
+                "Service-Worker-Allowed": "/"
+            }
+        },
+        {
+            "src": "/manifest.json",
+            "dest": "/app/static/manifest.json",
+            "headers": {
+                "cache-control": "public, max-age=0, must-revalidate"
+            }
+        },
+        {
             "src": "/static/(.*)",
             "dest": "/app/static/$1"
         },

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, request
+from flask import Blueprint, render_template, abort, request, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func, extract
 from app.extensions import db

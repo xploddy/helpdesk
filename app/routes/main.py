@@ -273,7 +273,9 @@ def reset_db():
 def service_worker():
     from flask import send_from_directory
     import os
-    response = send_from_directory(os.path.join(current_app.root_path, 'static'), 'sw.js')
+    # Arquivo agora está na raiz do projeto (um nível acima da pasta 'app')
+    root_dir = os.path.abspath(os.path.join(current_app.root_path, os.pardir))
+    response = send_from_directory(root_dir, 'sw.js')
     response.headers['Content-Type'] = 'application/javascript'
     response.headers['Service-Worker-Allowed'] = '/'
     return response
@@ -282,6 +284,8 @@ def service_worker():
 def manifest():
     from flask import send_from_directory
     import os
-    response = send_from_directory(os.path.join(current_app.root_path, 'static'), 'manifest.json')
+    # Arquivo agora está na raiz do projeto (um nível acima da pasta 'app')
+    root_dir = os.path.abspath(os.path.join(current_app.root_path, os.pardir))
+    response = send_from_directory(root_dir, 'manifest.json')
     response.headers['Content-Type'] = 'application/manifest+json'
     return response

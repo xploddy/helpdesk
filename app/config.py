@@ -12,6 +12,12 @@ class Config:
     if db_url:
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
+        
+        # Remove pgbouncer=true pois o psycopg2 não reconhece como opção de conexão válida
+        if "pgbouncer=true" in db_url:
+            db_url = db_url.replace("pgbouncer=true", "")
+            db_url = db_url.replace("?&", "?").replace("&&", "&").strip("?&")
+
         if "sslmode=" not in db_url:
             separator = "&" if "?" in db_url else "?"
             db_url += f"{separator}sslmode=require"

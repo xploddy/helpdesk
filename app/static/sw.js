@@ -31,14 +31,32 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch Event (Required for PWA Installability)
+// Fetch Event
 self.addEventListener('fetch', (event) => {
+    // Apenas intercepta requests GET
+    if (event.request.method !== 'GET') return;
+
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) {
                 return cachedResponse;
             }
-            return fetch(event.request);
+            return fetch(event.request).then((response) => {
+                // Não cachear se não for uma resposta válida ou se for cross-origin (opcional)
+                if (!response || response.status !== 200 || response.type !== 'basic') {
+                    return response;
+                }
+
+                // Opcional: Cachear novas respostas estáticas
+                const responseToCache = response.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    if (event.request.url.includes('/static/')) {
+                        cache.put(event.request, responseToCache);
+                    }
+                });
+
+                return response;
+            });
         }).catch(() => {
             if (event.request.mode === 'navigate') {
                 return caches.match('/');

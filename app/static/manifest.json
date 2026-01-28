@@ -1,11 +1,11 @@
 {
-    "name": "Helpdesk APP",
-    "short_name": "Helpdesk",
+    "name": "+HelpDesk Online",
+    "short_name": "+HelpDesk",
     "description": "Sistema de Gerenciamento de Chamados e Suporte Técnico",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0B1426",
-    "theme_color": "#0084FF",
+    "background_color": "#020617",
+    "theme_color": "#2563eb",
     "orientation": "portrait",
     "icons": [
         {

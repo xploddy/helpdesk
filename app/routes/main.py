@@ -229,3 +229,14 @@ def export_stats():
     
     filename = f"relatorio_helpdesk_{datetime.now().strftime('%Y%m%d')}.xlsx"
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=filename)
+@main_bp.route('/sw.js')
+def service_worker():
+    from flask import send_from_directory
+    import os
+    return send_from_directory(os.path.join(current_app.root_path, 'static'), 'sw.js')
+
+@main_bp.route('/manifest.json')
+def manifest():
+    from flask import send_from_directory
+    import os
+    return send_from_directory(os.path.join(current_app.root_path, 'static'), 'manifest.json')

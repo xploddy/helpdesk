@@ -617,9 +617,13 @@ def restore_backup():
         
     try:
         # Caminhos base
-        root_dir = os.path.abspath(os.path.join(current_app.root_path, os.pardir))
-        temp_extract_path = os.path.join(root_dir, 'instance', 'temp_restore')
+        import tempfile
+        temp_extract_path = os.path.join(tempfile.gettempdir(), 'temp_restore')
         
+        # Limpar se já existir (garantia)
+        if os.path.exists(temp_extract_path):
+            shutil.rmtree(temp_extract_path)
+            
         # Criar pasta temporária
         os.makedirs(temp_extract_path, exist_ok=True)
         

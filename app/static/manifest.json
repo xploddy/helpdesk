@@ -8,6 +8,7 @@
     "theme_color": "#2563eb",
     "orientation": "portrait",
     "scope": "/",
+    "id": "/",
     "icons": [
         {
             "src": "/static/icons/icon-192.png",
@@ -22,5 +23,18 @@
             "purpose": "any maskable"
         }
     ],
-    "prefer_related_applications": false
+    "prefer_related_applications": false,
+    "shortcuts": [
+        {
+            "name": "Novo Chamado",
+            "short_name": "Novo",
+            "url": "/tickets/create",
+            "icons": [
+                {
+                    "src": "/static/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
 }

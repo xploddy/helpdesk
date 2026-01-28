@@ -1,12 +1,13 @@
 {
     "name": "+HelpDesk Online",
     "short_name": "+HelpDesk",
-    "description": "Sistema de Gerenciamento de Chamados e Suporte Técnico",
+    "description": "Sistema de Suporte e Inventário",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#020617",
     "theme_color": "#2563eb",
     "orientation": "portrait",
+    "scope": "/",
     "icons": [
         {
             "src": "/static/icons/icon-192.png",
@@ -17,7 +18,8 @@
         {
             "src": "/static/icons/icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ]
 }

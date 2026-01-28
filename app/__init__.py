@@ -9,7 +9,10 @@ from sqlalchemy import text
 def setup_database(app):
     with app.app_context():
         try:
-            # Cria as tabelas se não existirem (Essencial para o Supabase novo)
+            # Testa conexão básica antes de tudo
+            db.session.execute(text('SELECT 1'))
+            
+            # Cria as tabelas se não existirem
             db.create_all()
             
             # Cria administrador padrão
@@ -21,20 +24,7 @@ def setup_database(app):
                 db.session.commit()
                 app.logger.info("Admin padrão criado com sucesso.")
         except Exception as e:
-            app.logger.error(f"Erro ao inicializar banco de dados: {e}")
-            # Não trava a aplicação, mas loga o erro
-
-        # Cleanup unwanted default categories
-        try:
-            from app.models.settings import Category
-            unwanted = ['TI', 'FINANCEIRO', 'RH', 'INFRAESTRUTURA', 'OUTRO', 'Financeiro', 'Infraestrutura', 'Outro']
-            for cat_name in unwanted:
-                cat = Category.query.filter(sa.func.lower(Category.name) == cat_name.lower()).first()
-                if cat:
-                    db.session.delete(cat)
-            db.session.commit()
-        except:
-            pass
+            app.logger.error(f"Erro crítico no banco de dados: {e}")
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -54,9 +44,7 @@ def create_app(config_class=Config):
     # Run automatic migrations
     setup_database(app)
     
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Por favor, faça login para acessar esta página.'
-    login_manager.login_message_category = 'info'
+
 
     # Register blueprints
     from .routes.main import main_bp

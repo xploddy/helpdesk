@@ -15,9 +15,9 @@ class Ticket(db.Model):
     due_at = db.Column(db.DateTime, nullable=True) # Prazo final (SLA)
     
     # Foreign Keys
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    assigned_to_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    assigned_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Quem atribuiu
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    assigned_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Quem atribuiu
     
     # Relationships
     author = db.relationship('User', foreign_keys=[user_id], backref=db.backref('tickets_created', lazy='dynamic'))
@@ -46,7 +46,7 @@ class Comment(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
     
     def __repr__(self):

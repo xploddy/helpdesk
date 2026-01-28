@@ -616,54 +616,112 @@ def restore_backup():
         return redirect(url_for('settings.index', tab='backup'))
         
     try:
-        # Caminhos base
         import tempfile
+        import sqlite3
+        from app.models.user import User
+        from app.models.ticket import Ticket, Attachment, Comment, TicketItem
+        from app.models.settings import Category, AppSettings, Item
+
         temp_extract_path = os.path.join(tempfile.gettempdir(), 'temp_restore')
         
-        # Limpar se já existir (garantia)
         if os.path.exists(temp_extract_path):
             shutil.rmtree(temp_extract_path)
-            
-        # Criar pasta temporária
         os.makedirs(temp_extract_path, exist_ok=True)
         
-        # Extrair ZIP
         with zipfile.ZipFile(file, 'r') as zf:
             zf.extractall(temp_extract_path)
             
-        # Restaurar Banco de Dados
         if restore_db:
             db_source = os.path.join(temp_extract_path, 'instance', 'helpdesk.db')
-            db_dest = os.path.join(root_dir, 'instance', 'helpdesk.db')
-            
             if os.path.exists(db_source):
-                # Fechar conexões do banco de dados antes de substituir (opcional mas recomendado)
-                db.session.remove()
-                db.engine.dispose()
-                shutil.copy2(db_source, db_dest)
-                flash('Banco de Dados restaurado com sucesso.', 'success')
+                # Se o banco atual for Postgres (Supabase), fazemos a migração de dados
+                if db.engine.name == 'postgresql':
+                    flash('Detectado banco de dados remoto. Iniciando migração de dados do SQLite...', 'info')
+                    
+                    # Conectar ao SQLite temporário
+                    sqlite_conn = sqlite3.connect(db_source)
+                    sqlite_conn.row_factory = sqlite3.Row
+                    cursor = sqlite_conn.cursor()
+
+                    def get_rows(table_name):
+                        try:
+                            cursor.execute(f"SELECT * FROM {table_name}")
+                            return cursor.fetchall()
+                        except:
+                            return []
+
+                    # 1. Limpar banco atual (Vazio é melhor para migração limpa)
+                    db.drop_all()
+                    db.create_all()
+
+                    # 2. Migrar Categorias
+                    for row in get_rows('category'):
+                        db.session.add(Category(id=row['id'], name=row['name']))
+                    db.session.commit()
+
+                    # 3. Migrar Usuários (Ajustando nome da tabela de 'user' para 'users')
+                    for row in get_rows('user'):
+                        u = User(id=row['id'], username=row['username'], email=row['email'], 
+                                 fullname=row['fullname'], password_hash=row['password_hash'], 
+                                 role=row['role'])
+                        db.session.add(u)
+                    db.session.commit()
+                    
+                    # 4. Migrar Itens do Inventário
+                    for row in get_rows('item'):
+                        it = Item(id=row['id'], name=row['name'], description=row['description'],
+                                  category=row['category'], quantity=row['quantity'], 
+                                  min_quantity=row['min_quantity'], unit_cost=row['unit_cost'],
+                                  location=row['location'], supplier=row['supplier'])
+                        db.session.add(it)
+                    db.session.commit()
+
+                    # 5. Migrar Tickets (Chamados)
+                    for row in get_rows('ticket'):
+                        t = Ticket(id=row['id'], title=row['title'], description=row['description'],
+                                   category=row['category'], priority=row['priority'], status=row['status'],
+                                   created_at=datetime.fromisoformat(row['created_at']) if row['created_at'] else None,
+                                   user_id=row['user_id'], assigned_to_id=row['assigned_to_id'])
+                        db.session.add(t)
+                    db.session.commit()
+
+                    # 6. Migrar Itens Usados, Comentários e Anexos
+                    for row in get_rows('ticket_item'):
+                        db.session.add(TicketItem(id=row['id'], ticket_id=row['ticket_id'], item_id=row['item_id'], quantity_used=row['quantity_used']))
+                    for row in get_rows('comment'):
+                        db.session.add(Comment(id=row['id'], content=row['content'], user_id=row['user_id'], ticket_id=row['ticket_id']))
+                    for row in get_rows('attachment'):
+                        db.session.add(Attachment(id=row['id'], filename=row['filename'], original_filename=row['original_filename'], ticket_id=row['ticket_id']))
+                    
+                    db.session.commit()
+                    sqlite_conn.close()
+                    flash('Migração de dados SQLite para Supabase concluída com sucesso!', 'success')
+                else:
+                    # Se for banco local, apenas copia o arquivo (comportamento antigo)
+                    db_dest = os.path.join(os.path.abspath(os.path.join(current_app.root_path, os.pardir)), 'instance', 'helpdesk.db')
+                    db.session.remove()
+                    db.engine.dispose()
+                    shutil.copy2(db_source, db_dest)
+                    flash('Banco de Dados SQLite restaurado.', 'success')
             else:
                 flash('Arquivo de banco de dados não encontrado no ZIP.', 'error')
                 
-        # Restaurar Uploads
         if restore_uploads:
+            # Lógica de uploads continua a mesma (armazenamento temporário na Vercel)
             uploads_source = os.path.join(temp_extract_path, 'app', 'uploads')
             uploads_dest = current_app.config['UPLOAD_FOLDER']
-            
             if os.path.exists(uploads_source):
-                if os.path.exists(uploads_dest):
-                    shutil.rmtree(uploads_dest)
+                if os.path.exists(uploads_dest): shutil.rmtree(uploads_dest)
                 shutil.copytree(uploads_source, uploads_dest)
-                flash('Anexos (Uploads) restaurados com sucesso.', 'success')
-            else:
-                flash('Pasta de uploads não encontrada no ZIP.', 'error')
+                flash('Anexos restaurados temporariamente.', 'success')
                 
-        # Limpar temporários
         shutil.rmtree(temp_extract_path)
-        flash('Restauração concluída. Recomenda-se reiniciar a aplicação para garantir a integridade.', 'info')
-        
     except Exception as e:
-        flash(f'Erro durante a restauração: {str(e)}', 'error')
+        db.session.rollback()
+        flash(f'Erro durante a restauração/migração: {str(e)}', 'error')
+        
+    return redirect(url_for('settings.index', tab='backup'))
+
         
     return redirect(url_for('settings.index', tab='backup'))
 

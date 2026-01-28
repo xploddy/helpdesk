@@ -9,7 +9,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     email = db.Column(db.String(120), index=True, unique=True, nullable=False)
     fullname = db.Column(db.String(200), nullable=True)  # Full name from AD or manual input
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(255))
     role = db.Column(db.String(20), default='user') # 'admin', 'user'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

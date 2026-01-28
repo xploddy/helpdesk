@@ -245,6 +245,21 @@ def init_db():
     except Exception as e:
         return f"Erro ao inicializar banco: {str(e)}", 500
 
+@main_bp.route('/reset-db')
+def reset_db():
+    try:
+        db.drop_all()
+        db.create_all()
+        
+        from app.models.user import User
+        admin = User(username='admin', email='admin@local', role='admin', fullname='Administrador')
+        admin.set_password('admin')
+        db.session.add(admin)
+        db.session.commit()
+        return "Banco de dados RESETADO e inicializado com sucesso!", 200
+    except Exception as e:
+        return f"Erro ao resetar banco: {str(e)}", 500
+
 @main_bp.route('/sw.js')
 def service_worker():
     from flask import send_from_directory

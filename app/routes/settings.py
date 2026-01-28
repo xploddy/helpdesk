@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, current_app
 from flask_login import login_required, current_user
 from app.extensions import db
+from sqlalchemy import text
 from app.models.settings import Category, AppSettings
 from app.models.user import User
 import ldap3

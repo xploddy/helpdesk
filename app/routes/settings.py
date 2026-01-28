@@ -650,8 +650,11 @@ def restore_backup():
                         except:
                             return []
 
-                    # 1. Limpar banco atual (Vazio é melhor para migração limpa)
-                    db.drop_all()
+                    # 1. Limpar dados atuais (Muito mais rápido que drop_all no Postgres)
+                    db.session.execute(text('TRUNCATE TABLE users, ticket, comment, attachment, category, item, ticket_item, app_settings RESTART IDENTITY CASCADE'))
+                    db.session.commit()
+                    
+                    # Garante que a estrutura básica existe (caso alguma tabela falte)
                     db.create_all()
 
                     # 2. Migrar Categorias

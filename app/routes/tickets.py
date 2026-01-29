@@ -37,21 +37,14 @@ def create_ticket():
         app_settings = AppSettings.query.first()
         sla_hours = 24 # Default
         if app_settings:
-            # Get hours based on priority (defaulting if not set)
-            param_name = f"sla_hours_{priority.lower().replace('á', 'a').replace('í', 'i')}"
-            # map 'media' -> 'media', 'critica' -> 'critica' (remove accents just in case)
-            if priority == 'Baixa': sla_hours = app_settings.sla_hours_baixa or 48
-            elif priority == 'Média' or priority == 'Media': sla_hours = app_settings.sla_hours_media or 24
-            elif priority == 'Alta': sla_hours = app_settings.sla_hours_alta or 8
-            elif priority == 'Crítica' or priority == 'Critica': sla_hours = app_settings.sla_hours_critica or 4
+            p_clean = priority.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+            if 'baixa' in p_clean: sla_hours = app_settings.sla_hours_baixa or 48
+            elif 'media' in p_clean: sla_hours = app_settings.sla_hours_media or 24
+            elif 'alta' in p_clean: sla_hours = app_settings.sla_hours_alta or 8
+            elif 'critica' in p_clean or 'urgente' in p_clean: sla_hours = app_settings.sla_hours_critica or 4
             
         due_at = datetime.utcnow() + timedelta(hours=sla_hours)
 
-        observer_id = request.form.get('observer_id')
-        if observer_id:
-            observer_id = int(observer_id)
-        else:
-            observer_id = None
 
         ticket = Ticket(
             title=title,
@@ -164,7 +157,10 @@ def list_tickets():
 @login_required
 def view_ticket(id):
     ticket = Ticket.query.get_or_404(id)
-    if current_user.role != 'admin' and ticket.user_id != current_user.id:
+    # Observer check
+    is_observer = current_user in ticket.observers
+    
+    if current_user.role != 'admin' and ticket.user_id != current_user.id and not is_observer:
         flash('Você não tem permissão para visualizar este chamado.', 'danger')
         return redirect(url_for('tickets.list_tickets'))
     
@@ -205,10 +201,11 @@ def edit_ticket(id):
              app_settings = AppSettings.query.first()
              sla_hours = 24
              if app_settings:
-                if priority == 'Baixa': sla_hours = app_settings.sla_hours_baixa or 48
-                elif priority == 'Média' or priority == 'Media': sla_hours = app_settings.sla_hours_media or 24
-                elif priority == 'Alta': sla_hours = app_settings.sla_hours_alta or 8
-                elif priority == 'Crítica' or priority == 'Critica': sla_hours = app_settings.sla_hours_critica or 4
+                p_clean = priority.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+                if 'baixa' in p_clean: sla_hours = app_settings.sla_hours_baixa or 48
+                elif 'media' in p_clean: sla_hours = app_settings.sla_hours_media or 24
+                elif 'alta' in p_clean: sla_hours = app_settings.sla_hours_alta or 8
+                elif 'critica' in p_clean or 'urgente' in p_clean: sla_hours = app_settings.sla_hours_critica or 4
              
              # Calculate from CREATION date or NOW? Usually from creation, but if changed late?
              # Let's keep it simple: update due date based on NOW if priority changes, OR recalculate from created_at
@@ -485,3 +482,34 @@ def delete_comment(comment_id):
     flash('Comentário removido.', 'success')
     return redirect(url_for('tickets.view_ticket', id=ticket_id))
 
+@tickets_bp.route('/tickets/<int:id>/observers/add', methods=['POST'])
+@login_required
+def add_observer(id):
+    if current_user.role != 'admin':
+        flash('Apenas administradores podem gerenciar observadores.', 'danger')
+        return redirect(url_for('tickets.view_ticket', id=id))
+        
+    ticket = Ticket.query.get_or_404(id)
+    user_id = request.form.get('user_id')
+    if user_id:
+        user = User.query.get(user_id)
+        if user and user not in ticket.observers:
+            ticket.observers.append(user)
+            db.session.commit()
+            flash(f'{user.fullname or user.username} adicionado como observador.', 'success')
+    return redirect(url_for('tickets.view_ticket', id=id))
+
+@tickets_bp.route('/tickets/<int:id>/observers/remove/<int:user_id>', methods=['POST'])
+@login_required
+def remove_observer(id, user_id):
+    if current_user.role != 'admin':
+        flash('Apenas administradores podem gerenciar observadores.', 'danger')
+        return redirect(url_for('tickets.view_ticket', id=id))
+        
+    ticket = Ticket.query.get_or_404(id)
+    user = User.query.get_or_404(user_id)
+    if user in ticket.observers:
+        ticket.observers.remove(user)
+        db.session.commit()
+        flash(f'{user.fullname or user.username} removido dos observadores.', 'success')
+    return redirect(url_for('tickets.view_ticket', id=id))

@@ -92,9 +92,12 @@
                             {% endif %}
                     </dd>
                 </div>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-300 sm:mt-0 sm:col-span-2 whitespace-pre-wrap">{{
-                    ticket.description
-                    }}</dd>
+                <div class="py-6 px-6 bg-slate-500/5 rounded-3xl mt-4 mx-4 border border-[var(--border-color)]">
+                    <dt class="text-[10px] font-black uppercase tracking-widest text-muted mb-3 flex items-center">
+                        <i class="fa-solid fa-align-left mr-2"></i> Descrição do Problema
+                    </dt>
+                    <dd class="text-sm text-main leading-relaxed whitespace-pre-wrap">{{ ticket.description }}</dd>
+                </div>
                 {% if ticket.assigned_to %}
                 <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                     <dt class="text-sm font-medium text-gray-500">Técnico Atribuído</dt>
@@ -110,15 +113,24 @@
                 {% endif %}
                 {% if ticket.observers %}
                 <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Observadores (Cópia)</dt>
+                    <dt class="text-sm font-medium text-gray-500">Observadores em Cópia</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                         <div class="flex flex-wrap gap-2">
                             {% for observer in ticket.observers %}
-                            <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                                <i class="fa-solid fa-eye mr-1.5 opacity-50"></i>
+                            <div
+                                class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-200 group">
+                                <i class="fa-solid fa-eye mr-2 opacity-50 text-[9px]"></i>
                                 {{ observer.fullname or observer.username }}
-                            </span>
+                                {% if current_user.role == 'admin' %}
+                                <form
+                                    action="{{ url_for('tickets.remove_observer', id=ticket.id, user_id=observer.id) }}"
+                                    method="POST" class="ml-2">
+                                    <button type="submit" class="text-red-400 hover:text-red-600 transition-colors">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                             {% endfor %}
                         </div>
                     </dd>
@@ -233,34 +245,51 @@
                                 </div>
                             </form>
 
-                            <!-- Set Observers -->
-                            <form action="{{ url_for('tickets.edit_ticket', id=ticket.id) }}" method="POST"
-                                class="space-y-2 md:col-span-2 border-t border-[var(--border-color)] pt-4">
-                                <input type="hidden" name="title" value="{{ ticket.title }}">
-                                <input type="hidden" name="category" value="{{ ticket.category }}">
-                                <input type="hidden" name="priority" value="{{ ticket.priority }}">
-                                <input type="hidden" name="description" value="{{ ticket.description }}">
+                            <!-- Search/Add Observers -->
+                            <div class="space-y-2 md:col-span-2 border-t border-[var(--border-color)] pt-4"
+                                x-data="{ open: false, search: '' }">
                                 <label
-                                    class="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Observadores
-                                    do Chamado</label>
-                                <div class="flex flex-col gap-2">
-                                    <select name="observer_ids" multiple
-                                        class="stitch-input block w-full px-3 py-2 text-sm rounded-xl focus:outline-none transition-all h-24">
-                                        {% for u in users %}
-                                        <option value="{{ u.id }}" {% if u in ticket.observers %}selected{% endif %}>{{
-                                            u.fullname or u.username }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-[9px] text-muted uppercase tracking-tighter">Segure CTRL para
-                                            selecionar vários</p>
-                                        <button type="submit"
-                                            class="px-8 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs uppercase rounded-xl transition-all">
-                                            Atualizar Observadores
-                                        </button>
+                                    class="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Gerenciar
+                                    Observadores</label>
+                                <div class="relative">
+                                    <div class="flex gap-2">
+                                        <div class="relative flex-grow">
+                                            <input type="text" x-model="search" @focus="open = true"
+                                                @input="open = true" placeholder="Pesquisar usuário para adicionar..."
+                                                class="stitch-input block w-full pl-10 pr-4 py-2.5 text-sm rounded-xl focus:outline-none transition-all">
+                                            <i
+                                                class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Search Results Dropdown -->
+                                    <div x-show="open && search.length > 0" @click.away="open = false"
+                                        class="absolute z-[110] mt-2 w-full stitch-surface border rounded-2xl shadow-2xl max-h-64 overflow-y-auto p-2"
+                                        style="display: none;">
+                                        <template
+                                            x-for="u in {{ users|tojson|safe }}.filter(u => (u.fullname + ' ' + u.username).toLowerCase().includes(search.toLowerCase()))"
+                                            :key="u.id">
+                                            <form action="{{ url_for('tickets.add_observer', id=ticket.id) }}"
+                                                method="POST">
+                                                <input type="hidden" name="user_id" :value="u.id">
+                                                <button type="submit"
+                                                    class="w-full text-left px-4 py-3 hover:bg-primary/5 rounded-xl transition-all group flex items-center justify-between">
+                                                    <div>
+                                                        <p class="text-sm font-bold text-main"
+                                                            x-text="u.fullname || u.username"></p>
+                                                        <p class="text-[10px] text-muted tracking-tight"
+                                                            x-text="'@' + u.username"></p>
+                                                    </div>
+                                                    <i
+                                                        class="fa-solid fa-plus text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                                </button>
+                                            </form>
+                                        </template>
                                     </div>
                                 </div>
-                            </form>
+                                <p class="text-[9px] text-muted uppercase tracking-tighter">Clique em um usuário para
+                                    adicioná-lo instantaneamente como observador</p>
+                            </div>
                         </div>
 
                         <!-- Add Item Button and Modal -->

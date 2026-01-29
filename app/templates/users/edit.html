@@ -55,65 +55,82 @@
                 </div>
 
                 <!-- Personal Info Section -->
-                <div class="space-y-2">
-                    <label for="fullname"
-                        class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Nome
-                        Completo</label>
-                    <div class="relative group">
-                        <i
-                            class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
-                        <input type="text" name="fullname" id="fullname"
-                            value="{{ user.fullname if user and user.fullname else '' }}"
-                            placeholder="ex: João da Silva"
-                            class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                        <div class="flex-grow">
+                            <label for="is_technician" class="block font-bold text-main text-sm">É Técnico da
+                                Equipe?</label>
+                            <p class="text-[10px] text-muted">Usuários marcados como técnicos podem receber chamados.
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="is_technician" id="is_technician" class="sr-only peer" {% if
+                                user and user.is_technician %}checked{% endif %}>
+                            <div
+                                class="w-11 h-6 bg-slate-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                            </div>
+                        </label>
                     </div>
-                </div>
 
-                <div class="space-y-2">
-                    <label for="email"
-                        class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Email
-                        Profissional</label>
-                    <div class="relative group">
-                        <i
-                            class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
-                        <input type="email" name="email" id="email" value="{{ user.email if user else '' }}" required
-                            placeholder="ex: joao@empresa.com"
-                            class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                    <div class="space-y-2">
+                        <label for="fullname"
+                            class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Nome
+                            Completo</label>
+                        <div class="relative group">
+                            <i
+                                class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
+                            <input type="text" name="fullname" id="fullname"
+                                value="{{ user.fullname if user and user.fullname else '' }}"
+                                placeholder="ex: João da Silva"
+                                class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                        </div>
                     </div>
-                </div>
 
-                <!-- Password Section -->
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between ml-1">
-                        <label for="password"
-                            class="block text-[10px] font-black uppercase tracking-widest text-muted">Senha de
-                            Acesso</label>
-                        {% if user %}
-                        <span
-                            class="text-[9px] text-orange-500 font-bold uppercase tracking-wider bg-orange-500/10 px-2 py-0.5 rounded">Opcional</span>
-                        {% endif %}
+                    <div class="space-y-2">
+                        <label for="email"
+                            class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1">Email
+                            Profissional</label>
+                        <div class="relative group">
+                            <i
+                                class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
+                            <input type="email" name="email" id="email" value="{{ user.email if user else '' }}"
+                                required placeholder="ex: joao@empresa.com"
+                                class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                        </div>
                     </div>
-                    <div class="relative group">
-                        <i
-                            class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
-                        <input type="password" name="password" id="password" {% if not user %}required{% endif %}
-                            placeholder="{% if user %}Deixe em branco para não alterar{% else %}Mínimo 6 caracteres{% endif %}"
-                            class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
-                    </div>
-                </div>
 
-                <!-- Actions -->
-                <div class="pt-6 flex flex-col sm:flex-row gap-3">
-                    <button type="submit"
-                        class="flex-grow order-1 sm:order-2 py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20 uppercase tracking-widest text-xs">
-                        <i class="fa-solid fa-check-circle mr-2"></i> {{ 'Salvar Alterações' if user else 'Criar
-                        Usuário' }}
-                    </button>
-                    <a href="{{ url_for('users.list_users') }}"
-                        class="flex-grow sm:flex-none order-2 sm:order-1 py-4 px-8 bg-[var(--bg-main)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-muted rounded-2xl font-bold transition-all uppercase tracking-widest text-xs text-center">
-                        Cancelar
-                    </a>
-                </div>
+                    <!-- Password Section -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between ml-1">
+                            <label for="password"
+                                class="block text-[10px] font-black uppercase tracking-widest text-muted">Senha de
+                                Acesso</label>
+                            {% if user %}
+                            <span
+                                class="text-[9px] text-orange-500 font-bold uppercase tracking-wider bg-orange-500/10 px-2 py-0.5 rounded">Opcional</span>
+                            {% endif %}
+                        </div>
+                        <div class="relative group">
+                            <i
+                                class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs group-focus-within:text-primary transition-colors"></i>
+                            <input type="password" name="password" id="password" {% if not user %}required{% endif %}
+                                placeholder="{% if user %}Deixe em branco para não alterar{% else %}Mínimo 6 caracteres{% endif %}"
+                                class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] pl-10 pr-4 py-3 rounded-2xl outline-none focus:border-primary transition-all text-sm font-medium">
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="pt-6 flex flex-col sm:flex-row gap-3">
+                        <button type="submit"
+                            class="flex-grow order-1 sm:order-2 py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary/20 uppercase tracking-widest text-xs">
+                            <i class="fa-solid fa-check-circle mr-2"></i> {{ 'Salvar Alterações' if user else 'Criar
+                            Usuário' }}
+                        </button>
+                        <a href="{{ url_for('users.list_users') }}"
+                            class="flex-grow sm:flex-none order-2 sm:order-1 py-4 px-8 bg-[var(--bg-main)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-muted rounded-2xl font-bold transition-all uppercase tracking-widest text-xs text-center">
+                            Cancelar
+                        </a>
+                    </div>
             </form>
         </div>
     </div>

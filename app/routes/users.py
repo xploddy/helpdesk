@@ -58,6 +58,8 @@ def create_user():
         password = request.form['password']
         role = request.form['role']
         
+        is_technician = 'is_technician' in request.form
+        
         if User.query.filter_by(username=username).first():
             flash('Nome de usuário já existe.', 'error')
             return redirect(url_for('users.create_user'))
@@ -65,7 +67,7 @@ def create_user():
             flash('Email já cadastrado.', 'error')
             return redirect(url_for('users.create_user'))
             
-        user = User(username=username, email=email, fullname=fullname, role=role)
+        user = User(username=username, email=email, fullname=fullname, role=role, is_technician=is_technician)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -82,6 +84,7 @@ def edit_user(id):
         user.email = request.form['email']
         user.fullname = request.form.get('fullname', '').strip() or None
         user.role = request.form['role']
+        user.is_technician = 'is_technician' in request.form
         
         if request.form['password']:
             user.set_password(request.form['password'])

@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     fullname = db.Column(db.String(200), nullable=True)  # Full name from AD or manual input
     password_hash = db.Column(db.String(255))
     role = db.Column(db.String(20), default='user') # 'admin', 'user'
+    is_technician = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships managed in Ticket model to avoid circular import/mapper issues

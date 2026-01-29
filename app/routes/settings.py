@@ -665,9 +665,11 @@ def restore_backup():
 
                     # 3. Migrar Usuários (Ajustando nome da tabela de 'user' para 'users')
                     for row in get_rows('user'):
+                        # Se a coluna is_technician não existir no SQLite, assume False
+                        is_tech = row['is_technician'] if 'is_technician' in row.keys() else False
                         u = User(id=row['id'], username=row['username'], email=row['email'], 
                                  fullname=row['fullname'], password_hash=row['password_hash'], 
-                                 role=row['role'])
+                                 role=row['role'], is_technician=is_tech)
                         db.session.add(u)
                     db.session.commit()
                     
@@ -682,10 +684,13 @@ def restore_backup():
 
                     # 5. Migrar Tickets (Chamados)
                     for row in get_rows('ticket'):
+                        # Se a coluna observer_id não existir no SQLite, assume None
+                        obs_id = row['observer_id'] if 'observer_id' in row.keys() else None
                         t = Ticket(id=row['id'], title=row['title'], description=row['description'],
                                    category=row['category'], priority=row['priority'], status=row['status'],
                                    created_at=datetime.fromisoformat(row['created_at']) if row['created_at'] else None,
-                                   user_id=row['user_id'], assigned_to_id=row['assigned_to_id'])
+                                   user_id=row['user_id'], assigned_to_id=row['assigned_to_id'],
+                                   observer_id=obs_id)
                         db.session.add(t)
                     db.session.commit()
 

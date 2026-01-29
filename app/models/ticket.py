@@ -18,11 +18,13 @@ class Ticket(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     assigned_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Quem atribuiu
+    observer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     # Relationships
     author = db.relationship('User', foreign_keys=[user_id], backref=db.backref('tickets_created', lazy='dynamic'))
     assigned_to = db.relationship('User', foreign_keys=[assigned_to_id], backref=db.backref('tickets_assigned', lazy='dynamic'))
     assigned_by = db.relationship('User', foreign_keys=[assigned_by_id], backref='tickets_delegated')
+    observer = db.relationship('User', foreign_keys=[observer_id], backref='tickets_as_observer')
 
     comments = db.relationship('Comment', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")
     attachments = db.relationship('Attachment', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")

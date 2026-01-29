@@ -64,20 +64,42 @@
         </div>
 
 
-        <!-- Category -->
-        <div>
-            <label for="category"
-                class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Categoria</label>
-            <div class="relative">
-                <select id="category" name="category"
-                    class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none">
-                    {% for cat in categories %}
-                    <option value="{{ cat.name }}" {% if ticket.category==cat.name %}selected{% endif %}>{{ cat.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                    <i class="fa-solid fa-chevron-down text-xs"></i>
+        <!-- Category & Observer -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="category"
+                    class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Categoria</label>
+                <div class="relative">
+                    <select id="category" name="category"
+                        class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none">
+                        {% for cat in categories %}
+                        <option value="{{ cat.name }}" {% if ticket.category==cat.name %}selected{% endif %}>{{ cat.name
+                            }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label for="observer_id"
+                    class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Observador
+                    (Cópia)</label>
+                <div class="relative">
+                    <select id="observer_id" name="observer_id"
+                        class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none">
+                        <option value="">Nenhum</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}" {% if ticket.observer_id==u.id %}selected{% endif %}>{{ u.fullname or
+                            u.username }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </div>
                 </div>
             </div>
         </div>

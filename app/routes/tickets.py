@@ -45,13 +45,20 @@ def create_ticket():
             
         due_at = datetime.utcnow() + timedelta(hours=sla_hours)
 
+        observer_id = request.form.get('observer_id')
+        if observer_id:
+            observer_id = int(observer_id)
+        else:
+            observer_id = None
+
         ticket = Ticket(
             title=title,
             category=category_name,
             priority=priority,
             description=description,
             user_id=user_id,
-            due_at=due_at
+            due_at=due_at,
+            observer_id=observer_id
         )
         db.session.add(ticket)
         db.session.commit() # Commit first to get ticket ID
@@ -81,12 +88,9 @@ def create_ticket():
     if not categories:
         categories = [] # Let the user create their own
     
-    # Get all users for admin to select
-    users = []
-    if current_user.role == 'admin':
-        users = User.query.all()
-        # Sort by fullname (insensitive) if available, else username
-        users.sort(key=lambda u: (u.fullname or u.username).lower())
+    # Get all users for admin to select (as author or observer)
+    users = User.query.all()
+    users.sort(key=lambda u: (u.fullname or u.username).lower())
         
     return render_template('tickets/create.html', categories=categories, users=users)
 
@@ -150,8 +154,11 @@ def view_ticket(id):
         flash('Você não tem permissão para visualizar este chamado.', 'danger')
         return redirect(url_for('tickets.list_tickets'))
     
-    technicians = User.query.filter_by(role='admin').all() if current_user.role == 'admin' else []
+    technicians = User.query.filter((User.role == 'admin') | (User.is_technician == True)).all()
     used_items = TicketItem.query.filter_by(ticket_id=id).all()
+    
+    users = User.query.all()
+    users.sort(key=lambda u: (u.fullname or u.username).lower())
     
     available_items = []
     if current_user.role == 'admin':
@@ -161,6 +168,7 @@ def view_ticket(id):
     return render_template('tickets/view.html', 
                          ticket=ticket, 
                          technicians=technicians, 
+                         users=users,
                          used_items=used_items,
                          available_items=available_items,
                          now=datetime.utcnow())
@@ -204,6 +212,13 @@ def edit_ticket(id):
             if selected_user_id:
                 ticket.user_id = int(selected_user_id)
         
+        # Observer assignment
+        observer_id = request.form.get('observer_id')
+        if observer_id:
+            ticket.observer_id = int(observer_id)
+        else:
+            ticket.observer_id = None
+        
         # Handle attachment (Multiple)
         files = request.files.getlist('attachment')
         for file in files:
@@ -224,11 +239,8 @@ def edit_ticket(id):
         flash('Chamado atualizado com sucesso!', 'success')
         return redirect(url_for('tickets.view_ticket', id=id))
 
-    # Get all users for admin to select
-    users = []
-    if current_user.role == 'admin':
-        users = User.query.all()
-        # Sort by fullname (insensitive)
+    # Get all users for selection
+    users = User.query.all()
     users.sort(key=lambda u: (u.fullname or u.username).lower())
     
     categories = Category.query.all()

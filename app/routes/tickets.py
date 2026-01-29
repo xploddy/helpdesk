@@ -21,12 +21,14 @@ def create_ticket():
         priority = request.form['priority']
         description = request.form['description']
         
-        # User assignment (only for admins)
+        # User and Observers assignment (only for admins)
         user_id = current_user.id
         if current_user.role == 'admin':
             selected_user_id = request.form.get('user_id')
             if selected_user_id:
                 user_id = int(selected_user_id)
+        
+        observer_ids = request.form.getlist('observer_ids')
         
         # SLA Calculation
         from app.models.settings import AppSettings
@@ -57,9 +59,14 @@ def create_ticket():
             priority=priority,
             description=description,
             user_id=user_id,
-            due_at=due_at,
-            observer_id=observer_id
+            due_at=due_at
         )
+        
+        # Add observers
+        if observer_ids:
+            observer_users = User.query.filter(User.id.in_([int(id) for id in observer_ids])).all()
+            ticket.observers.extend(observer_users)
+
         db.session.add(ticket)
         db.session.commit() # Commit first to get ticket ID
 
@@ -120,7 +127,14 @@ def list_tickets():
     
     # Permission check or filtering
     if current_user.role != 'admin':
-        query = query.filter_by(user_id=current_user.id)
+        # Show tickets created by user OR assigned to user OR where user is observer
+        query = query.filter(
+            or_(
+                Ticket.user_id == current_user.id,
+                Ticket.assigned_to_id == current_user.id,
+                Ticket.observers.any(User.id == current_user.id)
+            )
+        )
 
     # Search Filters
     q = request.args.get('q')
@@ -212,12 +226,12 @@ def edit_ticket(id):
             if selected_user_id:
                 ticket.user_id = int(selected_user_id)
         
-        # Observer assignment
-        observer_id = request.form.get('observer_id')
-        if observer_id:
-            ticket.observer_id = int(observer_id)
-        else:
-            ticket.observer_id = None
+        # Observers assignment
+        observer_ids = request.form.getlist('observer_ids')
+        ticket.observers = [] # Clear existing
+        if observer_ids:
+            observer_users = User.query.filter(User.id.in_([int(id) for id in observer_ids])).all()
+            ticket.observers.extend(observer_users)
         
         # Handle attachment (Multiple)
         files = request.files.getlist('attachment')
@@ -440,5 +454,34 @@ def remove_ticket_item(item_id):
     db.session.commit()
     
     flash('Item removido do chamado e estoque restaurado.', 'success')
+    return redirect(url_for('tickets.view_ticket', id=ticket_id))
+
+@tickets_bp.route('/comment/<int:comment_id>/edit', methods=['POST'])
+@login_required
+def edit_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    if current_user.id != comment.user_id and current_user.role != 'admin':
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('tickets.view_ticket', id=comment.ticket_id))
+    
+    content = request.form.get('content')
+    if content:
+        comment.content = content
+        db.session.commit()
+        flash('Comentário atualizado.', 'success')
+    return redirect(url_for('tickets.view_ticket', id=comment.ticket_id))
+
+@tickets_bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    ticket_id = comment.ticket_id
+    if current_user.id != comment.user_id and current_user.role != 'admin':
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('tickets.view_ticket', id=ticket_id))
+    
+    db.session.delete(comment)
+    db.session.commit()
+    flash('Comentário removido.', 'success')
     return redirect(url_for('tickets.view_ticket', id=ticket_id))
 

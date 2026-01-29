@@ -82,21 +82,18 @@
             </div>
 
             <div>
-                <label for="observer_id"
-                    class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Observador
-                    (Cópia)</label>
+                <label for="observer_ids"
+                    class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Observadores
+                    (Múltiplos)</label>
                 <div class="relative">
-                    <select id="observer_id" name="observer_id"
-                        class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none">
-                        <option value="">Nenhum</option>
+                    <select id="observer_ids" name="observer_ids" multiple
+                        class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none h-32">
                         {% for u in users %}
                         <option value="{{ u.id }}">{{ u.fullname or u.username }}</option>
                         {% endfor %}
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                        <i class="fa-solid fa-eye text-xs"></i>
-                    </div>
                 </div>
+                <p class="text-[9px] text-muted mt-1 uppercase tracking-tighter">Segure CTRL para selecionar vários</p>
             </div>
         </div>
 

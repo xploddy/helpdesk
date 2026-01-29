@@ -652,7 +652,7 @@ def restore_backup():
                             return []
 
                     # 1. Limpar dados atuais (Muito mais rápido que drop_all no Postgres)
-                    db.session.execute(text('TRUNCATE TABLE users, ticket, comment, attachment, category, item, ticket_item, app_settings RESTART IDENTITY CASCADE'))
+                    db.session.execute(text('TRUNCATE TABLE users, ticket, comment, attachment, category, item, ticket_item, app_settings, ticket_observers RESTART IDENTITY CASCADE'))
                     db.session.commit()
                     
                     # Garante que a estrutura básica existe (caso alguma tabela falte)
@@ -701,6 +701,11 @@ def restore_backup():
                         db.session.add(Comment(id=row['id'], content=row['content'], user_id=row['user_id'], ticket_id=row['ticket_id']))
                     for row in get_rows('attachment'):
                         db.session.add(Attachment(id=row['id'], filename=row['filename'], original_filename=row['original_filename'], ticket_id=row['ticket_id']))
+                    
+                    # 7. Migrar Observadores (Many-to-Many)
+                    for row in get_rows('ticket_observers'):
+                        # No SQLalchemy, inserimos direto na tabela de associação
+                        db.session.execute(text(f"INSERT INTO ticket_observers (ticket_id, user_id) VALUES ({row['ticket_id']}, {row['user_id']})"))
                     
                     db.session.commit()
                     sqlite_conn.close()

@@ -108,12 +108,19 @@
                     </dd>
                 </div>
                 {% endif %}
-                {% if ticket.observer %}
+                {% if ticket.observers %}
                 <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Observador (Cópia)</dt>
+                    <dt class="text-sm font-medium text-gray-500">Observadores (Cópia)</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        <i class="fa-solid fa-eye mr-1 text-muted"></i> {{ ticket.observer.fullname or
-                        ticket.observer.username }}
+                        <div class="flex flex-wrap gap-2">
+                            {% for observer in ticket.observers %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                                <i class="fa-solid fa-eye mr-1.5 opacity-50"></i>
+                                {{ observer.fullname or observer.username }}
+                            </span>
+                            {% endfor %}
+                        </div>
                     </dd>
                 </div>
                 {% endif %}
@@ -167,68 +174,94 @@
                     <dt class="text-[10px] uppercase font-bold tracking-widest text-muted">Ações Admin</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 space-y-4">
                         <!-- Update Status -->
-                        <form action="{{ url_for('tickets.update_status', id=ticket.id) }}" method="POST"
-                            class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                            <label class="text-xs text-muted w-full sm:w-auto">Alterar Status:</label>
-                            <select name="status"
-                                class="stitch-input block w-full sm:w-48 pl-3 pr-10 py-2 text-sm rounded-xl focus:outline-none transition-all">
-                                <option value="Aberto" {% if ticket.status=='Aberto' %}selected{% endif %}>Aberto
-                                </option>
-                                <option value="Em andamento" {% if ticket.status=='Em andamento' %}selected{% endif %}>
-                                    Em andamento</option>
-                                <option value="Resolvido" {% if ticket.status=='Resolvido' %}selected{% endif %}>
-                                    Resolvido</option>
-                                <option value="Fechado" {% if ticket.status=='Fechado' %}selected{% endif %}>Fechado
-                                </option>
-                            </select>
-                            <button type="submit"
-                                class="w-full sm:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-lg shadow-primary/20 text-sm font-bold rounded-xl text-white bg-primary hover:bg-primary-dark focus:outline-none transition-all">
-                                Atualizar
-                            </button>
-                        </form>
+                    <dt
+                        class="text-[10px] uppercase font-bold tracking-widest text-primary mb-4 border-b border-primary/10 pb-2">
+                        Painel de Controle Administrativo</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-500/5 p-6 rounded-3xl border border-[var(--border-color)]">
+                            <!-- Update Status -->
+                            <form action="{{ url_for('tickets.update_status', id=ticket.id) }}" method="POST"
+                                class="space-y-2">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Estado
+                                    do Chamado</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-grow">
+                                        <select name="status"
+                                            class="stitch-input block w-full pl-3 pr-10 py-2.5 text-sm rounded-xl focus:outline-none transition-all appearance-none">
+                                            <option value="Aberto" {% if ticket.status=='Aberto' %}selected{% endif %}>
+                                                Aberto</option>
+                                            <option value="Em andamento" {% if ticket.status=='Em andamento'
+                                                %}selected{% endif %}>Em andamento</option>
+                                            <option value="Resolvido" {% if ticket.status=='Resolvido' %}selected{%
+                                                endif %}>Resolvido</option>
+                                            <option value="Fechado" {% if ticket.status=='Fechado' %}selected{% endif
+                                                %}>Fechado</option>
+                                        </select>
+                                        <i
+                                            class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-muted pointer-events-none"></i>
+                                    </div>
+                                    <button type="submit"
+                                        class="px-4 bg-primary hover:bg-primary-dark text-white rounded-xl transition-all shadow-lg shadow-primary/20">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </div>
+                            </form>
 
-                        <!-- Assign Technician -->
-                        <form action="{{ url_for('tickets.assign_technician', id=ticket.id) }}" method="POST"
-                            class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-[var(--border-color)]">
-                            <label class="text-xs text-muted w-full sm:w-auto">Atribuir Técnico:</label>
-                            <select name="technician_id"
-                                class="stitch-input block w-full sm:w-48 pl-3 pr-10 py-2 text-sm rounded-xl focus:outline-none transition-all">
-                                <option value="">Selecionar técnico...</option>
-                                {% for tech in technicians %}
-                                <option value="{{ tech.id }}" {% if ticket.assigned_to_id==tech.id %}selected{% endif
-                                    %}>
-                                    {{ tech.fullname }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit"
-                                class="w-full sm:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-lg shadow-primary/10 text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all">
-                                Atribuir
-                            </button>
-                        </form>
+                            <!-- Assign Technician -->
+                            <form action="{{ url_for('tickets.assign_technician', id=ticket.id) }}" method="POST"
+                                class="space-y-2">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Técnico
+                                    Responsável</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-grow">
+                                        <select name="technician_id"
+                                            class="stitch-input block w-full pl-3 pr-10 py-2.5 text-sm rounded-xl focus:outline-none transition-all appearance-none">
+                                            <option value="">Nenhum</option>
+                                            {% for tech in technicians %}
+                                            <option value="{{ tech.id }}" {% if ticket.assigned_to_id==tech.id
+                                                %}selected{% endif %}>{{ tech.fullname or tech.username }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <i
+                                            class="fa-solid fa-user-gear absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-muted pointer-events-none"></i>
+                                    </div>
+                                    <button type="submit"
+                                        class="px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-lg shadow-indigo-600/20">
+                                        <i class="fa-solid fa-user-plus"></i>
+                                    </button>
+                                </div>
+                            </form>
 
-                        <!-- Set Observer -->
-                        <form action="{{ url_for('tickets.edit_ticket', id=ticket.id) }}" method="POST"
-                            class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-[var(--border-color)]">
-                            <input type="hidden" name="title" value="{{ ticket.title }}">
-                            <input type="hidden" name="category" value="{{ ticket.category }}">
-                            <input type="hidden" name="priority" value="{{ ticket.priority }}">
-                            <input type="hidden" name="description" value="{{ ticket.description }}">
-                            <label class="text-xs text-muted w-full sm:w-auto">Observador:</label>
-                            <select name="observer_id"
-                                class="stitch-input block w-full sm:w-48 pl-3 pr-10 py-2 text-sm rounded-xl focus:outline-none transition-all">
-                                <option value="">Remover observador</option>
-                                {% for u in users %}
-                                <option value="{{ u.id }}" {% if ticket.observer_id==u.id %}selected{% endif %}>
-                                    {{ u.fullname or u.username }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit"
-                                class="w-full sm:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-lg shadow-primary/5 text-sm font-bold rounded-xl text-white bg-slate-600 hover:bg-slate-700 focus:outline-none transition-all">
-                                Salvar
-                            </button>
-                        </form>
+                            <!-- Set Observers -->
+                            <form action="{{ url_for('tickets.edit_ticket', id=ticket.id) }}" method="POST"
+                                class="space-y-2 md:col-span-2 border-t border-[var(--border-color)] pt-4">
+                                <input type="hidden" name="title" value="{{ ticket.title }}">
+                                <input type="hidden" name="category" value="{{ ticket.category }}">
+                                <input type="hidden" name="priority" value="{{ ticket.priority }}">
+                                <input type="hidden" name="description" value="{{ ticket.description }}">
+                                <label
+                                    class="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Observadores
+                                    do Chamado</label>
+                                <div class="flex flex-col gap-2">
+                                    <select name="observer_ids" multiple
+                                        class="stitch-input block w-full px-3 py-2 text-sm rounded-xl focus:outline-none transition-all h-24">
+                                        {% for u in users %}
+                                        <option value="{{ u.id }}" {% if u in ticket.observers %}selected{% endif %}>{{
+                                            u.fullname or u.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-[9px] text-muted uppercase tracking-tighter">Segure CTRL para
+                                            selecionar vários</p>
+                                        <button type="submit"
+                                            class="px-8 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs uppercase rounded-xl transition-all">
+                                            Atualizar Observadores
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
 
                         <!-- Add Item Button and Modal -->
                     <dt class="text-[10px] uppercase font-bold tracking-widest text-muted">Materias / Itens</dt>
@@ -459,16 +492,47 @@
             <div class="px-4 py-5 sm:px-6">
                 <ul class="space-y-4">
                     {% for comment in ticket.comments %}
-                    <li class="bg-[var(--bg-main)]/50 rounded-xl p-4 border border-[var(--border-color)]">
-                        <div class="flex justify-between">
-                            <span class="font-bold text-sm text-main">{{ comment.author.username
-                                }}</span>
-                            <span class="text-xs text-muted">{{
-                                comment.created_at.strftime('%d/%m/%Y %H:%M')
-                                }}</span>
+                    <li class="bg-[var(--bg-main)]/50 rounded-xl p-4 border border-[var(--border-color)] group"
+                        x-data="{ editing: false }">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-sm text-main">{{ comment.author.fullname or
+                                    comment.author.username }}</span>
+                                <span class="text-[10px] text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M')
+                                    }}</span>
+                            </div>
+
+                            {% if current_user.id == comment.user_id or current_user.role == 'admin' %}
+                            <div
+                                class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button @click="editing = true"
+                                    class="text-xs text-primary hover:text-primary-dark font-bold uppercase tracking-wider">Editar</button>
+                                <form action="{{ url_for('tickets.delete_comment', comment_id=comment.id) }}"
+                                    method="POST" onsubmit="return confirm('Excluir comentário permanentemente?');">
+                                    <button type="submit"
+                                        class="text-xs text-red-500 hover:text-red-700 font-bold uppercase tracking-wider">Excluir</button>
+                                </form>
+                            </div>
+                            {% endif %}
                         </div>
-                        <p class="mt-2 text-sm text-muted whitespace-pre-wrap">{{ comment.content
-                            }}</p>
+
+                        <!-- Content / Edit Form -->
+                        <div class="mt-2 text-sm text-muted whitespace-pre-wrap" x-show="!editing">{{ comment.content }}
+                        </div>
+
+                        <form x-show="editing" @click.away="editing = false"
+                            action="{{ url_for('tickets.edit_comment', comment_id=comment.id) }}" method="POST"
+                            class="mt-2 space-y-2">
+                            <textarea name="content"
+                                class="stitch-input block w-full px-3 py-2 rounded-xl text-sm outline-none resize-none focus:border-primary"
+                                rows="3">{{ comment.content }}</textarea>
+                            <div class="flex justify-end space-x-2">
+                                <button type="button" @click="editing = false"
+                                    class="px-3 py-1 text-[10px] font-bold uppercase text-muted hover:text-main transition-colors">Cancelar</button>
+                                <button type="submit"
+                                    class="px-3 py-1 bg-primary text-white text-[10px] font-bold uppercase rounded-lg shadow-lg shadow-primary/20">Salvar</button>
+                            </div>
+                        </form>
                     </li>
                     {% else %}
                     <li class="text-gray-500 text-sm text-center py-4">Nenhum comentário ainda.</li>

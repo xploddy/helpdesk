@@ -2,13 +2,19 @@ from app.extensions import db
 from datetime import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
 
+# Tabela de associação para múltiplos observadores
+ticket_observers = db.Table('ticket_observers',
+    db.Column('ticket_id', db.Integer, db.ForeignKey('ticket.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
+)
+
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(140), nullable=False)
+    title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    category = db.Column(db.String(50), nullable=False) # TI, Financeiro, RH, Infraestrutura
-    priority = db.Column(db.String(20), default='Media') # Baixa, Media, Alta, Critica
-    status = db.Column(db.String(20), default='Aberto') # Aberto, Em andamento, Aguardando, Resolvido, Fechado
+    category = db.Column(db.String(50), nullable=False)
+    priority = db.Column(db.String(20), default='Media') # 'Baixa', 'Media', 'Alta', 'Critica'
+    status = db.Column(db.String(20), default='Aberto') # 'Aberto', 'Em andamento', 'Resolvido', 'Fechado'
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     resolved_at = db.Column(db.DateTime, nullable=True)
@@ -18,13 +24,13 @@ class Ticket(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     assigned_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Quem atribuiu
-    observer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     # Relationships
     author = db.relationship('User', foreign_keys=[user_id], backref=db.backref('tickets_created', lazy='dynamic'))
     assigned_to = db.relationship('User', foreign_keys=[assigned_to_id], backref=db.backref('tickets_assigned', lazy='dynamic'))
     assigned_by = db.relationship('User', foreign_keys=[assigned_by_id], backref='tickets_delegated')
-    observer = db.relationship('User', foreign_keys=[observer_id], backref='tickets_as_observer')
+    # many-to-many relationship for observers
+    observers = db.relationship('User', secondary=ticket_observers, backref=db.backref('observed_tickets', lazy='dynamic'))
 
     comments = db.relationship('Comment', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")
     attachments = db.relationship('Attachment', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")

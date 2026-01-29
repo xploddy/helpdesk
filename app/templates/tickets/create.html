@@ -87,7 +87,7 @@
                     search: '',
                     open: false,
                     allUsers: {{ users_json | tojson | safe }},
-                selectedObservers: [], // Array of user objects
+                selectedObservers: [],
                     get filteredUsers() {
                     if (!this.search) return [];
                     const s = this.search.toLowerCase();

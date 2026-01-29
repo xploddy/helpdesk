@@ -175,10 +175,20 @@ def view_ticket(id):
         from app.models.settings import Item
         available_items = Item.query.filter(Item.quantity > 0).order_by(Item.category, Item.name).all()
     
+    # Prepare users for JSON serialization (needed for Alpine.js search)
+    users_json = []
+    for u in users:
+        users_json.append({
+            'id': u.id,
+            'username': u.username,
+            'fullname': u.fullname or u.username
+        })
+    
     return render_template('tickets/view.html', 
                          ticket=ticket, 
                          technicians=technicians, 
                          users=users,
+                         users_json=users_json,
                          used_items=used_items,
                          available_items=available_items,
                          now=datetime.utcnow())

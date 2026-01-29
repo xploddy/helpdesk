@@ -12,7 +12,9 @@
                     #{{ ticket.id }} - {{ ticket.title }}
                 </h3>
                 <p class="mt-1 max-w-2xl text-sm text-muted">
-                    Aberto por {{ ticket.author.fullname or ticket.author.username }} ({{ ticket.author.username }}) em
+                    Aberto por {{ ticket.author.fullname or ticket.author.username if ticket.author else "Usuário
+                    Removido" }}
+                    {% if ticket.author %}({{ ticket.author.username }}){% endif %} em
                     {{ ticket.created_at.strftime('%d/%m/%Y às %H:%M') }}
                 </p>
             </div>
@@ -102,7 +104,8 @@
                 <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                     <dt class="text-sm font-medium text-gray-500">Técnico Atribuído</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium text-primary">
-                        <div><i class="fa-solid fa-user-gear mr-1"></i> {{ ticket.assigned_to.fullname }}</div>
+                        <div><i class="fa-solid fa-user-gear mr-1"></i> {{ ticket.assigned_to.fullname or
+                            ticket.assigned_to.username }}</div>
                         {% if ticket.assigned_by %}
                         <div class="text-[10px] text-slate-400 font-normal mt-1">
                             (Atribuído por {{ ticket.assigned_by.username }})
@@ -267,7 +270,7 @@
                                         class="absolute z-[110] mt-2 w-full stitch-surface border rounded-2xl shadow-2xl max-h-64 overflow-y-auto p-2"
                                         style="display: none;">
                                         <template
-                                            x-for="u in {{ users|tojson|safe }}.filter(u => (u.fullname + ' ' + u.username).toLowerCase().includes(search.toLowerCase()))"
+                                            x-for="u in {{ users_json|tojson|safe }}.filter(u => (u.fullname + ' ' + u.username).toLowerCase().includes(search.toLowerCase()))"
                                             :key="u.id">
                                             <form action="{{ url_for('tickets.add_observer', id=ticket.id) }}"
                                                 method="POST">
@@ -526,7 +529,7 @@
                         <div class="flex justify-between items-start">
                             <div class="flex items-center space-x-2">
                                 <span class="font-bold text-sm text-main">{{ comment.author.fullname or
-                                    comment.author.username }}</span>
+                                    comment.author.username if comment.author else "Usuário Removido" }}</span>
                                 <span class="text-[10px] text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M')
                                     }}</span>
                             </div>

@@ -248,56 +248,85 @@
                                 </div>
                             </form>
 
-                            <!-- Search/Add Observers -->
-                            <div class="space-y-2 md:col-span-2 border-t border-[var(--border-color)] pt-4"
+                            <!-- Search/Add Observers Section -->
+                            <div class="md:col-span-2 border-t border-[var(--border-color)] pt-6 mt-2"
                                 x-data="{ open: false, search: '' }">
-                                <label
-                                    class="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Gerenciar
-                                    Observadores</label>
-                                <div class="relative">
-                                    <div class="flex gap-2">
-                                        <div class="relative flex-grow">
+                                <div class="bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                                    <label
+                                        class="block text-[10px] font-black uppercase tracking-widest text-primary mb-3 ml-1 flex items-center">
+                                        <i class="fa-solid fa-user-plus mr-2"></i> Adicionar Novo Observador
+                                    </label>
+
+                                    <div class="relative">
+                                        <div class="relative">
                                             <input type="text" x-model="search" @focus="open = true"
-                                                @input="open = true" placeholder="Digite o nome ou usuário..."
+                                                @input="open = true"
+                                                placeholder="Para encontrar, digite o nome ou @usuário..."
                                                 autocomplete="off"
-                                                class="stitch-input block w-full pl-10 pr-10 py-2.5 text-sm rounded-xl focus:outline-none transition-all">
-                                            <i
-                                                class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted"></i>
+                                                class="stitch-input block w-full pl-11 pr-11 py-3.5 text-sm rounded-xl border-2 border-transparent focus:border-primary/30 focus:bg-white transition-all shadow-sm">
+
+                                            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40">
+                                                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                                            </div>
+
                                             <button type="button" x-show="search.length > 0"
                                                 @click="search = ''; open = false"
-                                                class="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-red-500 transition-colors">
-                                                <i class="fa-solid fa-circle-xmark text-xs"></i>
+                                                class="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-red-100 hover:text-red-500 transition-all">
+                                                <i class="fa-solid fa-xmark text-[10px]"></i>
                                             </button>
+                                        </div>
+
+                                        <!-- Search Results Dropdown -->
+                                        <div x-show="open && search.length > 0" @click.away="open = false"
+                                            x-transition:enter="transition ease-out duration-200"
+                                            x-transition:enter-start="opacity-0 translate-y-2"
+                                            x-transition:enter-end="opacity-100 translate-y-0"
+                                            class="absolute z-[120] mt-3 w-full bg-white dark:bg-slate-900 border border-[var(--border-color)] rounded-2xl shadow-2xl max-h-72 overflow-y-auto p-2"
+                                            style="display: none;">
+
+                                            <div class="px-3 py-2 border-b border-[var(--border-color)] mb-2">
+                                                <p class="text-[9px] font-bold text-muted uppercase tracking-widest">
+                                                    Resultados da busca</p>
+                                            </div>
+
+                                            <template
+                                                x-for="u in {{ users_json|tojson|safe }}.filter(u => (u.fullname + ' ' + u.username).toLowerCase().includes(search.toLowerCase()))"
+                                                :key="u.id">
+                                                <form action="{{ url_for('tickets.add_observer', id=ticket.id) }}"
+                                                    method="POST">
+                                                    <input type="hidden" name="user_id" :value="u.id">
+                                                    <button type="submit"
+                                                        class="w-full text-left px-3 py-3 hover:bg-primary hover:text-white rounded-xl transition-all group flex items-center space-x-3">
+                                                        <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 group-hover:bg-white/20 group-hover:text-white"
+                                                            x-text="(u.fullname || u.username).substring(0, 2).toUpperCase()">
+                                                        </div>
+                                                        <div class="flex-grow">
+                                                            <p class="text-sm font-bold"
+                                                                x-text="u.fullname || u.username"></p>
+                                                            <p class="text-[10px] opacity-60 tracking-tight"
+                                                                x-text="'@' + u.username"></p>
+                                                        </div>
+                                                        <i
+                                                            class="fa-solid fa-plus text-xs opacity-40 group-hover:opacity-100"></i>
+                                                    </button>
+                                                </form>
+                                            </template>
+
+                                            <!-- Empty State inside Dropdown -->
+                                            <div x-show="{{ users_json|tojson|safe }}.filter(u => (u.fullname + ' ' + u.username).toLowerCase().includes(search.toLowerCase())).length === 0"
+                                                class="py-8 text-center">
+                                                <i class="fa-solid fa-user-slash text-slate-300 text-2xl mb-2"></i>
+                                                <p class="text-xs text-muted">Nenhum usuário encontrado</p>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <!-- Search Results Dropdown -->
-                                    <div x-show="open && search.length > 0" @click.away="open = false"
-                                        class="absolute z-[110] mt-2 w-full stitch-surface border rounded-2xl shadow-2xl max-h-64 overflow-y-auto p-2"
-                                        style="display: none;">
-                                        <template
-                                            x-for="u in {{ users_json|tojson|safe }}.filter(u => (u.fullname + ' ' + u.username).toLowerCase().includes(search.toLowerCase()))"
-                                            :key="u.id">
-                                            <form action="{{ url_for('tickets.add_observer', id=ticket.id) }}"
-                                                method="POST">
-                                                <input type="hidden" name="user_id" :value="u.id">
-                                                <button type="submit"
-                                                    class="w-full text-left px-4 py-3 hover:bg-primary/5 rounded-xl transition-all group flex items-center justify-between">
-                                                    <div>
-                                                        <p class="text-sm font-bold text-main"
-                                                            x-text="u.fullname || u.username"></p>
-                                                        <p class="text-[10px] text-muted tracking-tight"
-                                                            x-text="'@' + u.username"></p>
-                                                    </div>
-                                                    <i
-                                                        class="fa-solid fa-plus text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                                                </button>
-                                            </form>
-                                        </template>
+                                    <div class="mt-3 flex items-center ml-1">
+                                        <i class="fa-solid fa-circle-info text-primary/40 text-[10px] mr-2"></i>
+                                        <p class="text-[9px] text-muted uppercase tracking-tighter">Clique no usuário
+                                            para adicioná-lo à cópia deste chamado</p>
                                     </div>
                                 </div>
-                                <p class="text-[9px] text-muted uppercase tracking-tighter">Clique em um usuário para
-                                    adicioná-lo instantaneamente como observador</p>
                             </div>
                         </div>
 

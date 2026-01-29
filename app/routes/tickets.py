@@ -89,6 +89,9 @@ def create_ticket():
         categories = [] # Let the user create their own
     
     # Get all users for admin to select (as author or observer)
+    users = User.query.all()
+    users.sort(key=lambda u: (u.fullname or u.username).lower())
+    
     # Prepare users for JSON serialization (needed for Alpine.js search)
     users_json = []
     for u in users:

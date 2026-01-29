@@ -102,7 +102,8 @@
                     <p class="text-xs text-muted truncate mt-1">{{ ticket.title }}</p>
                     <div class="flex items-center space-x-3 mt-2">
                         <p class="text-[10px] text-muted flex items-center">
-                            <i class="fa-solid fa-user mr-1 opacity-50"></i> {{ ticket.author.fullname }}
+                            <i class="fa-solid fa-user mr-1 opacity-50"></i>
+                            {{ ticket.author.fullname if ticket.author else "Usuário Removido" }}
                         </p>
                         {% if ticket.assigned_to %}
                         <p class="text-[10px] text-primary flex items-center font-bold">

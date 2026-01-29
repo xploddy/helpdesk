@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, abort, request, current_app
 from flask_login import login_required, current_user
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, or_
 from app.extensions import db
 from app.models.ticket import Ticket
+from app.models.user import User
 
 main_bp = Blueprint('main', __name__)
 
@@ -10,12 +11,16 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/index')
 @login_required
 def index():
-    # Stats logic (simplified for now)
-    from app.models.ticket import Ticket
-    
     query = Ticket.query
     if current_user.role != 'admin':
-        query = query.filter_by(user_id=current_user.id)
+        # Mostrar tickets criados por ele, atribuídos a ele ou onde é observador
+        query = query.filter(
+            or_(
+                Ticket.user_id == current_user.id,
+                Ticket.assigned_to_id == current_user.id,
+                Ticket.observers.any(User.id == current_user.id)
+            )
+        )
         
     tickets = query.all()
     

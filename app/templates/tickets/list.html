@@ -94,9 +94,9 @@
             <div class="flex items-center space-x-3 mb-6">
                 <div
                     class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white uppercase">
-                    {{ ticket.author.username[:2] }}
+                    {{ ticket.author.fullname[:2] }}
                 </div>
-                <span class="text-xs text-muted font-medium">{{ ticket.author.username }}</span>
+                <span class="text-xs text-muted font-medium">{{ ticket.author.fullname }}</span>
             </div>
 
             <!-- Footer Details -->

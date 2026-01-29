@@ -8,7 +8,7 @@ from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app, send_from_directory
-from sqlalchemy import or_
+from sqlalchemy import or_, cast, String
 
 tickets_bp = Blueprint('tickets', __name__)
 
@@ -138,7 +138,7 @@ def list_tickets():
         query = query.filter(or_(
             Ticket.title.ilike(f'%{q}%'),
             Ticket.description.ilike(f'%{q}%'),
-            Ticket.id.ilike(f'%{q}%')
+            cast(Ticket.id, String).ilike(f'%{q}%')
         ))
     
     if status and status != 'Todos':

@@ -85,35 +85,43 @@
             </div>
 
             <!-- Searchable Observers Section -->
+            <script type="application/json" id="editTicketUsersData">
+                {{ users_json|tojson|safe }}
+            </script>
+            <script type="application/json" id="editTicketObserversData">
+                [
+                    {% for obs in ticket.observers %}
+                    {"id": {{ obs.id }}, "username": "{{ obs.username }}", "fullname": "{{ obs.fullname or obs.username }}"}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            </script>
             <script>
+                const editUsersData = JSON.parse(document.getElementById('editTicketUsersData').textContent);
+                const editObserversData = JSON.parse(document.getElementById('editTicketObserversData').textContent);
                 window.editTicketData = {
                     search: '',
                     open: false,
-                    allUsers: {{ users_json | tojson | safe }},
-                selectedObservers: [
-                    {% for obs in ticket.observers %}
-                { id: { { obs.id } }, username: "{{ obs.username }}", fullname: "{{ obs.fullname or obs.username }}" } {% if not loop.last %}, {% endif %}
-                {% endfor %}
-                    ],
+                    allUsers: editUsersData,
+                    selectedObservers: editObserversData,
                     get filteredUsers() {
-                    if (!this.search) return [];
-                    const s = this.search.toLowerCase();
-                    return this.allUsers.filter(u =>
-                        ((u.fullname || '').toLowerCase().includes(s) ||
-                            (u.username || '').toLowerCase().includes(s)) &&
-                        !this.selectedObservers.find(sel => sel.id === u.id)
-                    );
-                },
-                addObserver(user) {
-                    if (!this.selectedObservers.find(sel => sel.id === user.id)) {
-                        this.selectedObservers.push(user);
+                        if (!this.search) return [];
+                        const s = this.search.toLowerCase();
+                        return this.allUsers.filter(u =>
+                            ((u.fullname || '').toLowerCase().includes(s) ||
+                                (u.username || '').toLowerCase().includes(s)) &&
+                            !this.selectedObservers.find(sel => sel.id === u.id)
+                        );
+                    },
+                    addObserver(user) {
+                        if (!this.selectedObservers.find(sel => sel.id === user.id)) {
+                            this.selectedObservers.push(user);
+                        }
+                        this.search = '';
+                        this.open = false;
+                    },
+                    removeObserver(userId) {
+                        this.selectedObservers = this.selectedObservers.filter(sel => sel.id !== userId);
                     }
-                    this.search = '';
-                    this.open = false;
-                },
-                removeObserver(userId) {
-                    this.selectedObservers = this.selectedObservers.filter(sel => sel.id !== userId);
-                }
                 };
             </script>
             <div x-data="window.editTicketData">

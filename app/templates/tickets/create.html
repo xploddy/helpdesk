@@ -82,31 +82,35 @@
             </div>
 
             <!-- Searchable Observers Section -->
+            <script type="application/json" id="createTicketUsersData">
+                {{ users_json|tojson|safe }}
+            </script>
             <script>
+                const createUsersData = JSON.parse(document.getElementById('createTicketUsersData').textContent);
                 window.createTicketData = {
                     search: '',
                     open: false,
-                    allUsers: {{ users_json | tojson | safe }},
-                selectedObservers: [],
+                    allUsers: createUsersData,
+                    selectedObservers: [],
                     get filteredUsers() {
-                    if (!this.search) return [];
-                    const s = this.search.toLowerCase();
-                    return this.allUsers.filter(u =>
-                        ((u.fullname || '').toLowerCase().includes(s) ||
-                            (u.username || '').toLowerCase().includes(s)) &&
-                        !this.selectedObservers.find(sel => sel.id === u.id)
-                    );
-                },
-                addObserver(user) {
-                    if (!this.selectedObservers.find(sel => sel.id === user.id)) {
-                        this.selectedObservers.push(user);
+                        if (!this.search) return [];
+                        const s = this.search.toLowerCase();
+                        return this.allUsers.filter(u =>
+                            ((u.fullname || '').toLowerCase().includes(s) ||
+                                (u.username || '').toLowerCase().includes(s)) &&
+                            !this.selectedObservers.find(sel => sel.id === u.id)
+                        );
+                    },
+                    addObserver(user) {
+                        if (!this.selectedObservers.find(sel => sel.id === user.id)) {
+                            this.selectedObservers.push(user);
+                        }
+                        this.search = '';
+                        this.open = false;
+                    },
+                    removeObserver(userId) {
+                        this.selectedObservers = this.selectedObservers.filter(sel => sel.id !== userId);
                     }
-                    this.search = '';
-                    this.open = false;
-                },
-                removeObserver(userId) {
-                    this.selectedObservers = this.selectedObservers.filter(sel => sel.id !== userId);
-                }
                 };
             </script>
             <div x-data="window.createTicketData">

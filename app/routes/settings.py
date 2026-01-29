@@ -683,14 +683,16 @@ def restore_backup():
                     db.session.commit()
 
                     # 5. Migrar Tickets (Chamados)
+                    legacy_observers = []
                     for row in get_rows('ticket'):
-                        # Se a coluna observer_id não existir no SQLite, assume None
-                        obs_id = row['observer_id'] if 'observer_id' in row.keys() else None
+                        # Se a coluna observer_id existir no SQLite (backup antigo), guardamos para migrar depois
+                        if 'observer_id' in row.keys() and row['observer_id']:
+                            legacy_observers.append({'ticket_id': row['id'], 'user_id': row['observer_id']})
+                            
                         t = Ticket(id=row['id'], title=row['title'], description=row['description'],
                                    category=row['category'], priority=row['priority'], status=row['status'],
                                    created_at=datetime.fromisoformat(row['created_at']) if row['created_at'] else None,
-                                   user_id=row['user_id'], assigned_to_id=row['assigned_to_id'],
-                                   observer_id=obs_id)
+                                   user_id=row['user_id'], assigned_to_id=row['assigned_to_id'])
                         db.session.add(t)
                     db.session.commit()
 
@@ -703,9 +705,19 @@ def restore_backup():
                         db.session.add(Attachment(id=row['id'], filename=row['filename'], original_filename=row['original_filename'], ticket_id=row['ticket_id']))
                     
                     # 7. Migrar Observadores (Many-to-Many)
-                    for row in get_rows('ticket_observers'):
-                        # No SQLalchemy, inserimos direto na tabela de associação
-                        db.session.execute(text(f"INSERT INTO ticket_observers (ticket_id, user_id) VALUES ({row['ticket_id']}, {row['user_id']})"))
+                    # Primeiro tenta migrar da nova tabela ticket_observers se ela existir no backup
+                    rows_observers = get_rows('ticket_observers')
+                    if rows_observers:
+                        for row in rows_observers:
+                            db.session.execute(text(f"INSERT INTO ticket_observers (ticket_id, user_id) VALUES ({row['ticket_id']}, {row['user_id']})"))
+                    
+                    # Depois migra os "legacy" (de quando era apenas um campo observer_id)
+                    # Apenas se aquele par ticket/user ainda não estiver lá
+                    for leg in legacy_observers:
+                        try:
+                            db.session.execute(text(f"INSERT INTO ticket_observers (ticket_id, user_id) VALUES ({leg['ticket_id']}, {leg['user_id']}) ON CONFLICT DO NOTHING"))
+                        except:
+                            pass
                     
                     db.session.commit()
                     sqlite_conn.close()

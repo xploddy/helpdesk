@@ -249,19 +249,26 @@
                             </form>
 
                             <!-- Search/Add Observers Section -->
-                            <div class="md:col-span-2 border-t border-[var(--border-color)] pt-6 mt-2" x-data="{ 
-                                    open: false, 
-                                    search: '', 
-                                    allUsers: {{ users_json|tojson|safe }},
+                            <script>
+                                (function () {
+                                    window.observerSearchData = {
+                                        open: false,
+                                        search: '',
+                                        allUsers: {{ users_json | tojson | safe }
+                                },
                                     get filteredUsers() {
-                                        if (!this.search) return [];
-                                        const s = this.search.toLowerCase();
-                                        return this.allUsers.filter(u => 
-                                            (u.fullname || '').toLowerCase().includes(s) || 
-                                            (u.username || '').toLowerCase().includes(s)
-                                        );
-                                    }
-                                 }">
+                                    if (!this.search) return [];
+                                    const s = this.search.toLowerCase();
+                                    return this.allUsers.filter(u =>
+                                        (u.fullname || '').toLowerCase().includes(s) ||
+                                        (u.username || '').toLowerCase().includes(s)
+                                    );
+                                }
+                                    };
+                                }) ();
+                            </script>
+                            <div class="md:col-span-2 border-t border-[var(--border-color)] pt-6 mt-2"
+                                x-data="window.observerSearchData">
                                 <div class="bg-primary/5 p-4 rounded-2xl border border-primary/10">
                                     <label
                                         class="block text-[10px] font-black uppercase tracking-widest text-primary mb-3 ml-1 flex items-center">

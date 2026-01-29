@@ -84,20 +84,97 @@
                 </div>
             </div>
 
-            <div>
-                <label for="observer_ids"
-                    class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Observadores
-                    (Múltiplos)</label>
-                <div class="relative">
-                    <select id="observer_ids" name="observer_ids" multiple
-                        class="stitch-input appearance-none block w-full px-4 py-3 rounded-xl border focus:border-primary transition-all outline-none h-32">
-                        {% for u in users %}
-                        <option value="{{ u.id }}" {% if u in ticket.observers %}selected{% endif %}>{{ u.fullname or
-                            u.username }}</option>
-                        {% endfor %}
-                    </select>
+            <!-- Searchable Observers Section -->
+            <script>
+                window.editTicketData = {
+                    search: '',
+                    open: false,
+                    allUsers: {{ users_json | tojson | safe }},
+                selectedObservers: [
+                    {% for obs in ticket.observers %}
+                { id: { { obs.id } }, username: "{{ obs.username }}", fullname: "{{ obs.fullname or obs.username }}" } {% if not loop.last %}, {% endif %}
+                {% endfor %}
+                    ],
+                    get filteredUsers() {
+                    if (!this.search) return [];
+                    const s = this.search.toLowerCase();
+                    return this.allUsers.filter(u =>
+                        ((u.fullname || '').toLowerCase().includes(s) ||
+                            (u.username || '').toLowerCase().includes(s)) &&
+                        !this.selectedObservers.find(sel => sel.id === u.id)
+                    );
+                },
+                addObserver(user) {
+                    if (!this.selectedObservers.find(sel => sel.id === user.id)) {
+                        this.selectedObservers.push(user);
+                    }
+                    this.search = '';
+                    this.open = false;
+                },
+                removeObserver(userId) {
+                    this.selectedObservers = this.selectedObservers.filter(sel => sel.id !== userId);
+                }
+                };
+            </script>
+            <div x-data="window.editTicketData">
+                <label class="block text-[10px] uppercase font-bold tracking-widest text-muted mb-2">Observadores
+                    (Cópia)</label>
+
+                <!-- Selected Observers Badges -->
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <template x-for="obs in selectedObservers" :key="obs.id">
+                        <div
+                            class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20 transition-all hover:bg-primary/20 group">
+                            <i class="fa-solid fa-eye mr-2 opacity-50 text-[9px]"></i>
+                            <span x-text="obs.fullname || obs.username"></span>
+                            <button type="button" @click="removeObserver(obs.id)"
+                                class="ml-2 text-primary/50 hover:text-red-500 transition-colors">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <!-- Hidden input for form submission -->
+                            <input type="hidden" name="observer_ids" :value="obs.id">
+                        </div>
+                    </template>
+                    <template x-if="selectedObservers.length === 0">
+                        <span class="text-[10px] text-slate-400 italic">Nenhum observador selecionado</span>
+                    </template>
                 </div>
-                <p class="text-[9px] text-muted mt-1 uppercase tracking-tighter">Segure CTRL para selecionar vários</p>
+
+                <!-- Search Input -->
+                <div class="relative">
+                    <div class="relative">
+                        <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                            placeholder="Pesquisar usuários para colocar em cópia..." autocomplete="off"
+                            class="stitch-input block w-full pl-10 pr-10 py-3 rounded-xl border focus:border-primary transition-all outline-none text-sm">
+                        <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted"></i>
+                        <button type="button" x-show="search.length > 0" @click="search = ''; open = false"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-red-500">
+                            <i class="fa-solid fa-circle-xmark text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Dropdown Results -->
+                    <div x-show="open && search.length > 0" @click.away="open = false"
+                        class="absolute z-50 mt-2 w-full stitch-surface border rounded-2xl shadow-2xl max-h-60 overflow-y-auto p-2"
+                        style="display: none;">
+                        <template x-for="u in filteredUsers" :key="u.id">
+                            <button type="button" @click="addObserver(u)"
+                                class="w-full text-left px-4 py-3 hover:bg-primary hover:text-white rounded-xl transition-all group flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-bold text-main group-hover:text-white"
+                                        x-text="u.fullname || u.username"></p>
+                                    <p class="text-[10px] text-muted group-hover:text-white/70 tracking-tight"
+                                        x-text="'@' + u.username"></p>
+                                </div>
+                                <i
+                                    class="fa-solid fa-plus text-xs opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </button>
+                        </template>
+                        <div x-show="filteredUsers.length === 0" class="py-6 text-center">
+                            <p class="text-xs text-muted">Nenhum usuário encontrado</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

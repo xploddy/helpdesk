@@ -89,10 +89,19 @@ def create_ticket():
         categories = [] # Let the user create their own
     
     # Get all users for admin to select (as author or observer)
-    users = User.query.all()
-    users.sort(key=lambda u: (u.fullname or u.username).lower())
+    # Prepare users for JSON serialization (needed for Alpine.js search)
+    users_json = []
+    for u in users:
+        users_json.append({
+            'id': u.id,
+            'username': u.username,
+            'fullname': u.fullname or u.username
+        })
         
-    return render_template('tickets/create.html', categories=categories, users=users)
+    return render_template('tickets/create.html', 
+                          categories=categories, 
+                          users=users,
+                          users_json=users_json)
 
 
 @tickets_bp.route('/tickets/<int:id>/delete', methods=['POST'])
@@ -265,7 +274,20 @@ def edit_ticket(id):
     users.sort(key=lambda u: (u.fullname or u.username).lower())
     
     categories = Category.query.all()
-    return render_template('tickets/edit.html', ticket=ticket, users=users, categories=categories)
+    # Prepare users for JSON serialization (needed for Alpine.js search)
+    users_json = []
+    for u in users:
+        users_json.append({
+            'id': u.id,
+            'username': u.username,
+            'fullname': u.fullname or u.username
+        })
+        
+    return render_template('tickets/edit.html', 
+                          ticket=ticket, 
+                          users=users, 
+                          users_json=users_json,
+                          categories=categories)
 
 
 @tickets_bp.route('/uploads/<filename>')

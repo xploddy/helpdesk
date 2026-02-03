@@ -12,6 +12,21 @@ def setup_database(app):
             # Testa conexão básica antes de tudo
             db.session.execute(text('SELECT 1'))
             
+            # Tenta adicionar a coluna theme via SQL puro antes de qualquer query de model
+            # Isso evita que o app trave no startup se a coluna faltar no Postgres
+            try:
+                # No Postgres usamos este comando
+                db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme VARCHAR(20) DEFAULT 'light'"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                try:
+                    # Caso de erro (ex: SQLite que não suporta IF NOT EXISTS no ALTER), tentamos normal
+                    db.session.execute(text("ALTER TABLE users ADD COLUMN theme VARCHAR(20) DEFAULT 'light'"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+
             # Cria as tabelas se não existirem
             db.create_all()
             

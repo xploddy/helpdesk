@@ -274,44 +274,6 @@ def reset_db():
     except Exception as e:
         return f"Erro ao resetar banco: {str(e)}", 500
 
-@main_bp.route('/migrate-db')
-def migrate_db():
-    from sqlalchemy import text
-    results = []
-    # Migração da coluna theme
-    try:
-        db.session.execute(text("ALTER TABLE users ADD COLUMN theme VARCHAR(20) DEFAULT 'light'"))
-        db.session.commit()
-        results.append("Coluna 'theme' adicionada em 'users'.")
-    except Exception as e:
-        try:
-            db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN theme VARCHAR(20) DEFAULT 'light'"))
-            db.session.commit()
-            results.append("Coluna 'theme' adicionada em 'user'.")
-        except Exception as e2:
-            results.append(f"Nota tema: {str(e2)}")
-            
-    # Migração do assigned_by_id caso falte
-    try:
-        db.session.execute(text("ALTER TABLE ticket ADD COLUMN assigned_by_id INTEGER REFERENCES users(id)"))
-        db.session.commit()
-        results.append("Coluna 'assigned_by_id' adicionada.")
-    except Exception as e:
-        results.append(f"Nota assigned_by_id: {str(e)}")
-
-    return "<br>".join(results)
-
-@main_bp.route('/update-theme', methods=['POST'])
-@login_required
-def update_theme():
-    data = request.get_json()
-    theme = data.get('theme')
-    if theme in ['light', 'dark']:
-        current_user.theme = theme
-        db.session.commit()
-        return {'status': 'success'}, 200
-    return {'status': 'error', 'message': 'Tema inválido'}, 400
-
 @main_bp.route('/sw.js')
 def service_worker():
     from flask import send_from_directory

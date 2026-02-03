@@ -22,21 +22,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         // Check for saved theme immediately to prevent flicker
-        {% if current_user.is_authenticated %}
-        // If user is logged in, prioritize their saved preference from database
-        if ("{{ current_user.theme }}" === 'dark') {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
             document.documentElement.classList.remove('dark')
         }
-        {% else %}
-        // For non-logged users, default to light but respect manual toggle in localStorage
-        if (localStorage.theme === 'dark') {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
-        {% endif %}
     </script>
     <style>
         [x-cloak] {
@@ -293,26 +283,13 @@
 
     <script>
         function toggleTheme() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
-
-            if (isDark) {
+            if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
             } else {
                 document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
             }
-
-            localStorage.theme = newTheme;
-
-            {% if current_user.is_authenticated %}
-            fetch('/update-theme', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ theme: newTheme })
-            });
-            {% endif %}
         }
 
         // PWA Service Worker Registration

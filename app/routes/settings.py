@@ -667,10 +667,9 @@ def restore_backup():
                     for row in get_rows('user'):
                         # Se a coluna is_technician não existir no SQLite, assume False
                         is_tech = row['is_technician'] if 'is_technician' in row.keys() else False
-                        theme = row['theme'] if 'theme' in row.keys() else 'light'
                         u = User(id=row['id'], username=row['username'], email=row['email'], 
                                  fullname=row['fullname'], password_hash=row['password_hash'], 
-                                 role=row['role'], is_technician=is_tech, theme=theme)
+                                 role=row['role'], is_technician=is_tech)
                         db.session.add(u)
                     db.session.commit()
                     

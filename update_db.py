@@ -40,22 +40,10 @@ with app.app_context():
         print(f"Nota: Coluna due_at provavelmente já existe ({str(e)})")
 
     try:
-        db.session.execute(text("ALTER TABLE ticket ADD COLUMN assigned_by_id INTEGER REFERENCES users(id)"))
+        db.session.execute(text("ALTER TABLE ticket ADD COLUMN assigned_by_id INTEGER REFERENCES user(id)"))
         print("Coluna assigned_by_id adicionada.")
     except Exception as e:
         print(f"Nota: Coluna assigned_by_id provavelmente já existe ({str(e)})")
-
-    # 3. Adicionar coluna theme na tabela users
-    try:
-        db.session.execute(text("ALTER TABLE users ADD COLUMN theme VARCHAR(20) DEFAULT 'light'"))
-        print("Coluna theme adicionada na tabela users.")
-    except Exception as e:
-        try:
-            # Tentar na tabela 'user' caso o nome seja esse no banco remoto
-            db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN theme VARCHAR(20) DEFAULT 'light'"))
-            print("Coluna theme adicionada na tabela user.")
-        except Exception as e2:
-            print(f"Nota: Coluna theme provavelmente já existe ({str(e2)})")
 
     db.session.commit()
     print("Migração concluída.")

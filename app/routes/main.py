@@ -274,6 +274,17 @@ def reset_db():
     except Exception as e:
         return f"Erro ao resetar banco: {str(e)}", 500
 
+@main_bp.route('/update-theme', methods=['POST'])
+@login_required
+def update_theme():
+    data = request.get_json()
+    theme = data.get('theme')
+    if theme in ['light', 'dark']:
+        current_user.theme = theme
+        db.session.commit()
+        return {'status': 'success'}, 200
+    return {'status': 'error', 'message': 'Tema inválido'}, 400
+
 @main_bp.route('/sw.js')
 def service_worker():
     from flask import send_from_directory

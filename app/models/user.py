@@ -12,6 +12,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255))
     role = db.Column(db.String(20), default='user') # 'admin', 'user'
     is_technician = db.Column(db.Boolean, default=False)
+    theme = db.Column(db.String(20), default='light')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships managed in Ticket model to avoid circular import/mapper issues
